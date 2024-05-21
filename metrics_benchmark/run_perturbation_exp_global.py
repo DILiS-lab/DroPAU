@@ -46,7 +46,7 @@ def write_to_json(object, filename):
 
 def main():
     torch.set_float32_matmul_precision("medium")
-    datasets = ["synthetic", "red_wine", "ailerons", "lsat"] 
+    datasets = ["synthetic", "red_wine", "ailerons", "lsat"]
     methods = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
     for dataset in datasets:
         if dataset == "synthetic":
@@ -87,7 +87,7 @@ def main():
 
                 write_to_json(
                     {"perturb": out_perturb},
-                    f"real_world_experiments/results/{dataset}_{repeat}_out_perturbation_global_new_wc.json",
+                    f"metrics_benchmark/results/{dataset}_{repeat}_out_perturbation_global_new_wc.json",
                 )
     print("Done")
 

@@ -34,18 +34,18 @@ lip_combined <- process_lipschitz(read_csv("data/lipschitz/red_wine_1_out_lipsch
   scale_y_continuous(trans = "log10") +
   ylab("Lipshitz Estimate") +
   xlab("Dataset") + 
-  guides(fill = guide_legend(nrow = 1, title = "Method"), color = guide_legend(nrow = 1, title = "Method")) +
+  guides(fill = guide_legend(ncol= 1, title = "Method"), color = guide_legend(ncol = 1, title = "Method")) +
   scale_fill_manual(values=c("#88CCEE", "#CC6677", "#44AA99", "#DDCC77", "#882255")) +
   scale_color_manual(values=c("#88CCEE", "#CC6677", "#44AA99", "#DDCC77", "#882255")) +
   theme_bw() +
   theme(
-    legend.position = "top", 
+    # legend.position = "top", 
     legend.text= element_text(size=14), 
     legend.title = element_blank(),
-    legend.box.margin=margin(0,0,-10,0),
+    legend.box.margin=margin(0,0,0,-5),
     axis.text.x = element_text(size=14),
     axis.title = element_text(size=16),
-    plot.margin = unit(c(0, 0.05, 0, 0.05), "cm")))
+    plot.margin = unit(c(0.05, 0.05, 0, 0.05), "cm")))
 
 
-ggsave("Lipschitz_robustness_v3.pdf", lipschitz, width=10, height=4, device=cairo_pdf)
+ggsave("Lipschitz_robustness_v4.pdf", lipschitz, width=10, height=3.75, device=cairo_pdf)

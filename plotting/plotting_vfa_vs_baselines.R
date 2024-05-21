@@ -29,9 +29,9 @@ plot_exp <- function(df, rank_acc, mass_acc, title, y_side="left", x_side="botto
            ylab("") +
            geom_label(
              label=paste0("GRA: ", rank_acc, "\n GMA: ", mass_acc), 
-             size=2.75,
+             size=3.33,
              x=max(df$feature_importance) / 2, #- max(df$feature_importance) * 0.15,
-             y=2.75,
+             y=2.95,
              label.padding = unit(0.5, "lines"), # Rectangle size around label
              label.size = NA,
              color = "black",
@@ -137,15 +137,16 @@ vfa_vs_baselines <- plot_grid(legend, grid, nrow=2, rel_heights = c(0.05, 1)) +
 
 
 shap.1 = ggdraw() +
-  draw_image(magick::image_read_pdf("data/shap_randomU.pdf", density = 600)) +
+  draw_image(magick::image_read_pdf("data/variance_output.pdf", density = 600)) +
   theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
 shap.2 = ggdraw() +
-  draw_image(magick::image_read_pdf("data/shap_randomU_mean.pdf", density = 600)) +
+  draw_image(magick::image_read_pdf("data/mean_output.pdf", density = 600)) +
   theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
 
 left <- plot_grid(shap.1, shap.2, ncol=1,  
           labels = c("A", "B"), 
           label_size = 26,
+          rel_heights = c(1, 1.1),
           label_x = c(-0.04, -0.04))
 
 
@@ -157,5 +158,5 @@ left <- plot_grid(shap.1, shap.2, ncol=1,
           rel_widths = c(0.25, 1)))
 
 
-ggsave("base_syn_experiment_v1.pdf", final, width=12, height=4.75, device=cairo_pdf)
+ggsave("base_syn_experiment_v4.pdf", final, width=12, height=4.75, device=cairo_pdf)
   
