@@ -16,11 +16,11 @@ We use Python 3.11.5.
 
 ### How to Use
 
-To run the global_synthetic_benchmark uncertainty explanation experiment, follow these steps:
+To run the global_synthetic_benchmark uncertainty explanation experiment, follow these steps (conda is required to install the environment):
 
 1. Open a terminal or command prompt.
 
-2. Install the requirements.txt file using `pip install -r requirements.txt`
+2. Install the requirements.txt file using `conda env create -f environment.yml`
 
 3. Navigate to the directory `global_synthetic_benchmark`.
 
@@ -82,7 +82,10 @@ Dataset is a selection of `synthetic`, `red_wine`, `ailerons`, and `lsat`. `synt
 ## Finding Potential Drivers of Uncertainty in Age Detection
 If not specified, all paths refer to files in the `age_detection` directory.
 
-Install the requirements.txt file using `pip install -r requirements.txt`.
+If you have not done so, please follow the following steps to set up the conda environment:
+1. Open a terminal or command prompt.
+
+2. Install the requirements.txt file using `conda env create -f environment.yml`
 
 ### Download the IMBD-clean dataset
 Follow the instructions on the [IMBD-clean GitHub repository](https://github.com/yiminglin-ai/imdb-clean) to download the images. The downloaded images (in the numbered directories) need to be stored in a directory called images:
