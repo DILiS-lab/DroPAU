@@ -22,10 +22,10 @@ process_lipschitz <- function(df, dataset){
 }
 
 
-lip_combined <- process_lipschitz(read_csv("data/lipschitz/red_wine_1_out_lipschitz.csv"), "Red Wine") |>
-  union(process_lipschitz(read_csv("data/lipschitz/ailerons_1_out_lipschitz.csv"), "Ailerons")) |>
-  union(process_lipschitz(read_csv("data/lipschitz/synthetic_out_lipschitz.csv"), "Synthetic")) |>
-  union(process_lipschitz(read_csv("data/lipschitz/lsat_out_lipschitz.csv"), "LSAT")) |>
+lip_combined <- process_lipschitz(read_csv("data/lipschitz/red_wine_out_lipschitz_fixed.csv"), "Red Wine") |>
+  union(process_lipschitz(read_csv("data/lipschitz/ailerons_out_lipschitz_fixed.csv"), "Ailerons")) |>
+  union(process_lipschitz(read_csv("data/lipschitz/synthetic_out_lipschitz_fixed.csv"), "Synthetic")) |>
+  union(process_lipschitz(read_csv("data/lipschitz/lsat_out_lipschitz_fixed.csv"), "LSAT")) |>
   mutate(dataset = factor(dataset, levels=c("Red Wine", "Ailerons", "LSAT", "Synthetic")))
 
 
