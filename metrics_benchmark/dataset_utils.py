@@ -113,6 +113,7 @@ def get_synthetic_data(
     n_samples,
     n_features_mean,
     n_features_uncertainty,
+    n_features_mean_and_uncertainty: int = 0,
     noise_scaler: int = 1,
     random_state: int = 0,
     n_samples_train: int = None,
@@ -145,6 +146,19 @@ def get_synthetic_data(
         inputs = np.concatenate((inputs, data_noise[0]), axis=1)
     else:
         feature_names = [f"feature_{i}" for i in range(inputs.shape[1])]
+    if n_features_mean_and_uncertainty > 0:
+        # generate the mean features and mean labels
+        data_mixed = noise_model(
+            n_samples, n_features_mean_and_uncertainty, model_error_noise
+        )
+        # standardize the data
+        location_change = (data_mixed[1]-np.mean(data_mixed[1]))/np.std(data_mixed[1])
+        # scale to the same range as the original data for meaningful contribution
+        shift = np.random.normal(loc=location_change*np.std(output), scale=2*noise_scaler*data_mixed[1], size=n_samples)
+        inputs = np.concatenate((inputs, data_mixed[0]), axis=1)
+        output = output + shift
+        feature_names += [f"mixed_feature_{i}" for i in range(data_mixed[0].shape[1])]
+        
 
     splits = get_split(
         pd.DataFrame(inputs, columns=feature_names),
