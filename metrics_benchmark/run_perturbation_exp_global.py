@@ -66,7 +66,7 @@ def main():
 
             write_to_json(
                 {"perturb": out_perturb},
-                "results/{dataset}_out_perturbation_global.json",
+                f"results/{dataset}_out_perturbation_global.json",
             )
         else:
             for repeat in [1]:

@@ -675,7 +675,7 @@ def varx_ig_explain(
             "feature_importance": feature_importances,
             "importance_directed": attribution,
             "var_names": var_names,
-            "instances_to_explain": instances_to_explain_sorted.cpu.numpy()
+            "instances_to_explain": instances_to_explain_sorted.cpu().numpy()
             if sort
             else instances_to_explain.cpu().numpy(),
         }
