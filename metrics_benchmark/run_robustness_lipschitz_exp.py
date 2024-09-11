@@ -64,11 +64,12 @@ def main():
     user_args = parser.parse_args()
 
     for dataset in [user_args.dataset]:  # "lsat", "ailerons", "red_wine", "synthetic"
-        if dataset == "synthetic":
+        if 'synthetic' in dataset:
             data = get_synthetic_data(
                 41500,
                 70,
                 5,
+                0 if dataset == "synthetic" else int(dataset.split("_")[2]),
                 n_samples_train=32000,
                 n_samples_val=8000,
                 n_samples_test=1500,

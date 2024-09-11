@@ -47,7 +47,7 @@ def write_to_json(object, filename):
 def main():
     torch.set_float32_matmul_precision("medium")
     datasets = ["synthetic_mixed_5"] #["synthetic", "red_wine", "ailerons", "lsat"]
-    methods = ["varx"] #["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
+    methods = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
     for dataset in datasets:
         if "synthetic" in dataset: 
             data = get_synthetic_data(
