@@ -26,6 +26,7 @@ def add_noise_features(
     noise_level,
     n_noise_features,
     use_simple_noise_model,
+    n_noise_features_mixed=0
 ):
     if y_train.dtype == np.int32 or y_train.dtype == np.int64:
         y_train = y_train.astype(np.float64)
@@ -43,15 +44,31 @@ def add_noise_features(
             k=n_noise_features,
             noise_level=noise_level,
         )
+    y_train += np.random.normal(0, stds[: len(x_train)])
+    y_val += np.random.normal(0, stds[len(x_train) : n_train_val])
+    y_test += np.random.normal(0, stds[n_train_val:])
+
+    if n_noise_features_mixed > 0:
+        assert not(use_simple_noise_model), "Cannot use mixed noise model with simple noise model"
+        # add noise features which also correlate with the target
+        data_mixed = noise_model(
+            n=(n_train_val + len(x_test)), k=n_noise_features_mixed, noise_level=noise_level
+        )
+        # standardize the data
+        location_change = (data_mixed[1]-np.mean(data_mixed[1]))/np.std(data_mixed[1])
+        # scale to the same range as the original data for meaningful contribution
+        shift = np.random.normal(loc=location_change*1.2, scale=data_mixed[1], size=(n_train_val + len(x_test)))
+        features = np.concatenate((features, data_mixed[0]), axis=1)
+        y_train = y_train + shift[:len(x_train)]
+        y_val = y_val + shift[len(x_train):n_train_val]
+        y_test = y_test + shift[n_train_val:] 
     print(x_train.shape)
     x_train = np.concatenate([x_train, features[: len(x_train)]], axis=1)
     x_val = np.concatenate([x_val, features[len(x_train) : n_train_val]], axis=1)
     x_test = np.concatenate([x_test, features[n_train_val:]], axis=1)
     print(x_train.shape)
 
-    y_train += np.random.normal(0, stds[: len(x_train)])
-    y_val += np.random.normal(0, stds[len(x_train) : n_train_val])
-    y_test += np.random.normal(0, stds[n_train_val:])
+    
 
     return {
         "x_train": x_train,
@@ -189,6 +206,7 @@ def localization_experiment(
     y_test: np.ndarray,
     use_simple_noise_model: bool = False,
     dataset: str = None,
+    n_noise_features_mixed: int = 0
 ):
     """
     :param noise_levels: Overall magnitude of the added noise
@@ -201,6 +219,9 @@ def localization_experiment(
     :param y_test: The test targets
     :return: localization precision differences
     """
+    if use_simple_noise_model:
+        assert n_noise_features_mixed == 0, "Cannot use mixed noise model with simple noise model"
+
     model_indentifiers = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
     localization_precisions = {}
     mass_accuracies = {}
@@ -210,9 +231,9 @@ def localization_experiment(
         mass_accuracies[noise_level] = {}
         global_metrics[noise_level] = {}
         for n_noise_features in n_noise_features_list:
-            localization_precisions[noise_level][n_noise_features] = {}
-            mass_accuracies[noise_level][n_noise_features] = {}
-            global_metrics[noise_level][n_noise_features] = {}
+            localization_precisions[noise_level][n_noise_features+n_noise_features_mixed] = {}
+            mass_accuracies[noise_level][n_noise_features+n_noise_features_mixed] = {}
+            global_metrics[noise_level][n_noise_features+n_noise_features_mixed] = {}
 
             # print("y_train", y_train)
             # print("y_test", y_test)
@@ -226,12 +247,13 @@ def localization_experiment(
                 noise_level=noise_level,
                 n_noise_features=n_noise_features,
                 use_simple_noise_model=use_simple_noise_model,
+                n_noise_features_mixed=n_noise_features_mixed
             )
 
             pnn_model = train_pnn(
                 **noised_dataset,
-                identifier=f"localization_{dataset}_{noise_level}_{n_noise_features}",
-                save_dir=f"localization_{dataset}_{noise_level}_{n_noise_features}",
+                identifier=f"localization_{dataset}_{noise_level}_{n_noise_features}_mixed_{n_noise_features_mixed}",
+                save_dir=f"localization_{dataset}_{noise_level}_{n_noise_features}_mixed_{n_noise_features_mixed}",
                 overwrite=True,
                 beta_gaussian=False,
             )
@@ -249,7 +271,7 @@ def localization_experiment(
                     **noised_dataset,
                     model=model,
                     explain_method=model_ident,
-                    n_noise_features=n_noise_features,
+                    n_noise_features=n_noise_features+n_noise_features_mixed,
                     dataset=f"{dataset}_{noise_level}_{n_noise_features}",
                 )
                 precisions = result["instance_precisions"]
@@ -264,7 +286,7 @@ def localization_experiment(
                 global_localization_precision_bottom = result[
                     "global_localization_precision_bottom"
                 ]
-                global_metrics[noise_level][n_noise_features][model_ident] = {
+                global_metrics[noise_level][n_noise_features+n_noise_features_mixed][model_ident] = {
                     "global_localization_precision": global_localization_precision,
                     "global_mass_accuracy": global_mass_accuracy,
                     "global_mass_accuracy_top": global_mass_accuracy_top,
@@ -272,10 +294,10 @@ def localization_experiment(
                     "global_mass_accuracy_bottom": global_mass_accuracy_bottom,
                     "global_localization_precision_bottom": global_localization_precision_bottom,
                 }
-                localization_precisions[noise_level][n_noise_features][
+                localization_precisions[noise_level][n_noise_features+n_noise_features_mixed][
                     model_ident
                 ] = precisions
-                mass_accuracies[noise_level][n_noise_features][model_ident] = accuracies
+                mass_accuracies[noise_level][n_noise_features+n_noise_features_mixed][model_ident] = accuracies
 
     # shutil.rmtree("lightning_logs")
 

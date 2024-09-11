@@ -120,6 +120,7 @@ def get_data(
     identifier: str,
     k_mean: int = 70,
     k_noise: int = 5,
+    k_mixed: int = 0,
     random_state: int = 1,
 ):
     """
@@ -134,6 +135,7 @@ def get_data(
     - identifier (str): Unique identifier for the dataset file.
     - k_mean (int, optional): Number of features for the linear model (default is 70).
     - k_noise (int, optional): Number of features for the noise model (default is 5).
+    - k_mixed (int, optional): Number of features for the mixed model (default is 5).
     - random_state (int, optional): Seed for random number generation (default is 1).
 
     Returns:
@@ -172,8 +174,22 @@ def get_data(
         ]
         inputs = np.concatenate((inputs, data_noise[0]), axis=1)
 
+
+        if k_mixed > 0:
+            data_mixed = noise_model(
+                n, k_mixed, model_error_noise
+            )
+            # standardize the data
+            location_change = (data_mixed[1]-np.mean(data_mixed[1]))/np.std(data_mixed[1])
+            # scale to the same range as the original data for meaningful contribution
+            shift = np.random.normal(loc=location_change*1.2, scale=noise_scaler*data_mixed[1], size=n) 
+            inputs = np.concatenate((inputs, data_mixed[0]), axis=1)
+            output = output + shift
+            feature_names += [f"mixed_feature_{i}" for i in range(data_mixed[0].shape[1])]
+
+
         x_train, x_test, y_train, y_test, _, noise_std_test = train_test_split(
-            inputs, output, data_noise[1], test_size=n_test, random_state=1
+            inputs, output, data_noise[1]+noise_scaler*data_mixed[1], test_size=n_test, random_state=1
         )  # We need the noise_std_test to compare with the pnn uncertainties
         x_train, x_val, y_train, y_val = train_test_split(
             x_train, y_train, test_size=0.2, random_state=1
@@ -738,6 +754,7 @@ def run_uncertainty_explanation_experiment(
     noise_scaler=2.0,
     n=40000,
     n_test=1500,
+    k_mixed=0,
     remake_data=True,
     overwrite_pnn=True,
     beta_gaussian=False,
@@ -771,6 +788,7 @@ def run_uncertainty_explanation_experiment(
         remake_data=remake_data,
         n_train=n,
         n_test=n_test,
+        k_mixed=k_mixed,
         noise_scaler=noise_scaler,
         save_dir=save_dir,
         identifier=identifier,
@@ -860,8 +878,16 @@ def run_uncertainty_explanation_experiment(
         for i in range(explainer_repeats):
             print(f"Running repeat {i}")
             identifier_run = f"{identifier}_run_{i}_{ind_identifier}"
+            explain_mean(
+                pnn=pnn,
+                x_train=x_train.numpy(),
+                instances_to_explain=x_test.numpy()[indices],
+                identifier=identifier_run,
+                save_dir=save_dir,
+                var_names=var_names,
+            )
             start = timer()
-
+            
             varx_explain(
                 pnn=pnn,
                 x_train=x_train.numpy(),
@@ -935,14 +961,7 @@ def run_uncertainty_explanation_experiment(
             end = timer()
             infoshap_elapsed.append(end - start)
 
-            explain_mean(
-                pnn=pnn,
-                x_train=x_train.numpy(),
-                instances_to_explain=x_test.numpy()[indices],
-                identifier=identifier_run,
-                save_dir=save_dir,
-                var_names=var_names,
-            )
+            
 
     for method in ["VarX", "CLUE", "VarXIG", "VarXLRP", "infoshap"]:
         for u in ["highU", "lowU", "randomU"]:

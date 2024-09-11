@@ -58,6 +58,7 @@ def main():
         n_instances_to_explain=args.n_instances_to_explain,
         explainer_repeats=args.explainer_repeats,
         noise_scaler=args.noise_scaler,
+        k_mixed=5,
         n=args.n,
         n_test=args.n_test,
         remake_data=args.remake_data,
