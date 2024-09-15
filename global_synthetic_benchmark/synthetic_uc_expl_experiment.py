@@ -54,11 +54,13 @@ def main():
     )
     args = parser.parse_args()
 
+    k_mixed = 5
+    print("Running uncertainty explanation experiment with k_mixed=5")  
     run_uncertainty_explanation_experiment(
         n_instances_to_explain=args.n_instances_to_explain,
         explainer_repeats=args.explainer_repeats,
         noise_scaler=args.noise_scaler,
-        k_mixed=5,
+        k_mixed=k_mixed,
         n=args.n,
         n_test=args.n_test,
         remake_data=args.remake_data,

@@ -793,6 +793,7 @@ def run_uncertainty_explanation_experiment(
         save_dir=save_dir,
         identifier=identifier,
     )
+    var_names = list(var_names)
     dtype = torch.float32
     x_train = torch.tensor(x_train, dtype=dtype)
     y_train = torch.tensor(y_train, dtype=dtype)
