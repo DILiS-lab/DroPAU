@@ -66,7 +66,7 @@ def main():
             )
             write_to_json(
                 {"perturb_pos": out_perturb_pos, "perturb_neg": out_perturb_neg},
-                "synthetic_out_perturbation.json",
+                f"{dataset}_out_perturbation.json",
             )
 
         else:

@@ -49,11 +49,16 @@ def add_noise_features(
     y_test += np.random.normal(0, stds[n_train_val:])
 
     if n_noise_features_mixed > 0:
-        assert not(use_simple_noise_model), "Cannot use mixed noise model with simple noise model"
         # add noise features which also correlate with the target
-        data_mixed = noise_model(
-            n=(n_train_val + len(x_test)), k=n_noise_features_mixed, noise_level=noise_level
-        )
+        if use_simple_noise_model:
+            data_mixed = simple_noise_model(
+                n=(n_train_val + len(x_test)), k=n_noise_features_mixed, noise_level=noise_level
+            )
+        else:
+            data_mixed = noise_model(
+                n=(n_train_val + len(x_test)), k=n_noise_features_mixed, noise_level=noise_level
+            )
+
         # standardize the data
         location_change = (data_mixed[1]-np.mean(data_mixed[1]))/np.std(data_mixed[1])
         # scale to the same range as the original data for meaningful contribution
@@ -219,8 +224,6 @@ def localization_experiment(
     :param y_test: The test targets
     :return: localization precision differences
     """
-    if use_simple_noise_model:
-        assert n_noise_features_mixed == 0, "Cannot use mixed noise model with simple noise model"
 
     model_indentifiers = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
     localization_precisions = {}
