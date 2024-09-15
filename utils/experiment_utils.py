@@ -281,10 +281,10 @@ def train_pnn(
     }
     model.mse_only = True
     model.fit(
-        X_train=x_train if isinstance(x_train, np.ndarray) else x_train.numpy(),
-        y_train=y_train if isinstance(y_train, np.ndarray) else y_train.numpy(),
-        X_eval=x_val if isinstance(x_val, np.ndarray) else x_val.numpy(),
-        y_eval=y_val if isinstance(y_val, np.ndarray) else y_val.numpy(),
+        X_train=x_train if isinstance(x_train, np.ndarray) else x_train.cpu().detach().numpy(),
+        y_train=y_train if isinstance(y_train, np.ndarray) else y_train.cpu().detach().numpy(),
+        X_eval=x_val if isinstance(x_val, np.ndarray) else x_val.cpu().detach().numpy(),
+        y_eval=y_val if isinstance(y_val, np.ndarray) else y_val.cpu().detach().numpy(),
         batch_size=64,
         patience=20,
         adversarial_training=False,
@@ -292,8 +292,8 @@ def train_pnn(
     )
 
     model.eval()
-    x_test = x_test if isinstance(x_test, np.ndarray) else x_test.numpy()
-    y_test = y_test if isinstance(y_test, np.ndarray) else y_test.numpy()
+    x_test = x_test if isinstance(x_test, np.ndarray) else x_test.cpu().detach().numpy()
+    y_test = y_test if isinstance(y_test, np.ndarray) else y_test.cpu().detach().numpy()
     mse_before = np.mean(np.square(model.predict_target(x_test) - y_test))
     model.train()
 
@@ -301,10 +301,10 @@ def train_pnn(
     model.mse_only = False
     trainer_params["max_epochs"] = 100
     model.fit(
-        X_train=x_train if isinstance(x_train, np.ndarray) else x_train.numpy(),
-        y_train=y_train if isinstance(y_train, np.ndarray) else y_train.numpy(),
-        X_eval=x_val if isinstance(x_val, np.ndarray) else x_val.numpy(),
-        y_eval=y_val if isinstance(y_val, np.ndarray) else y_val.numpy(),
+        X_train=x_train if isinstance(x_train, np.ndarray) else x_train.cpu().detach().numpy(),
+        y_train=y_train if isinstance(y_train, np.ndarray) else y_train.cpu().detach().numpy(),
+        X_eval=x_val if isinstance(x_val, np.ndarray) else x_val.cpu().detach().numpy(),
+        y_eval=y_val if isinstance(y_val, np.ndarray) else y_val.cpu().detach().numpy(),
         batch_size=64,
         patience=40,
         adversarial_training=False,
@@ -315,8 +315,8 @@ def train_pnn(
         model.checkpoint_callback.best_model_path, **model_kwargs
     )
     model.eval()
-    x_test = x_test if isinstance(x_test, np.ndarray) else x_test.numpy()
-    y_test = y_test if isinstance(y_test, np.ndarray) else y_test.numpy()
+    x_test = x_test if isinstance(x_test, np.ndarray) else x_test.cpu().detach().numpy()
+    y_test = y_test if isinstance(y_test, np.ndarray) else y_test.cpu().detach().numpy()
     mse_after = np.mean(np.square(model.predict_target(x_test) - y_test))
 
     # save the model
@@ -607,9 +607,9 @@ def varx_lrp_explain(
                 "feature_importance": feature_importances,
                 "importance_directed": attribution,
                 "var_names": var_names,
-                "instances_to_explain": instances_to_explain_sorted.numpy()
+                "instances_to_explain": instances_to_explain_sorted.cpu().detach().numpy()
                 if sort
-                else instances_to_explain.cpu().numpy(),
+                else instances_to_explain.cpu().detach().numpy(),
             },
         )
     else:
@@ -617,9 +617,9 @@ def varx_lrp_explain(
             "feature_importance": feature_importances,
             "importance_directed": attribution,
             "var_names": var_names,
-            "instances_to_explain": instances_to_explain_sorted.numpy()
+            "instances_to_explain": instances_to_explain_sorted.cpu().detach().numpy()
             if sort
-            else instances_to_explain.cpu().numpy(),
+            else instances_to_explain.cpu().detach().numpy(),
         }
 
 
@@ -665,9 +665,9 @@ def varx_ig_explain(
                 "feature_importance": feature_importances,
                 "importance_directed": attribution,
                 "var_names": var_names,
-                "instances_to_explain": instances_to_explain_sorted.numpy()
+                "instances_to_explain": instances_to_explain_sorted.cpu().detach().numpy()
                 if sort
-                else instances_to_explain.cpu().numpy(),
+                else instances_to_explain.cpu().detach().numpy(),
             },
         )
     else:
@@ -880,8 +880,8 @@ def run_uncertainty_explanation_experiment(
             identifier_run = f"{identifier}_run_{i}_{ind_identifier}"
             explain_mean(
                 pnn=pnn,
-                x_train=x_train.numpy(),
-                instances_to_explain=x_test.numpy()[indices],
+                x_train=x_train.cpu().detach().numpy(),
+                instances_to_explain=x_test.cpu().detach().numpy()[indices],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 var_names=var_names,
@@ -890,8 +890,8 @@ def run_uncertainty_explanation_experiment(
             
             varx_explain(
                 pnn=pnn,
-                x_train=x_train.numpy(),
-                instances_to_explain=x_test.numpy()[indices],
+                x_train=x_train.cpu().detach().numpy(),
+                instances_to_explain=x_test.cpu().detach().numpy()[indices],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 var_names=var_names,
@@ -922,7 +922,7 @@ def run_uncertainty_explanation_experiment(
             start = timer()
             varx_ig_explain(
                 pnn=pnn,
-                instances_to_explain=x_test.numpy()[indices],
+                instances_to_explain=x_test.cpu().detach().numpy()[indices],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 var_names=var_names,
@@ -935,7 +935,7 @@ def run_uncertainty_explanation_experiment(
             start = timer()
             varx_lrp_explain(
                 pnn=pnn,
-                instances_to_explain=x_test.numpy()[indices],
+                instances_to_explain=x_test.cpu().detach().numpy()[indices],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 save=True,
@@ -949,9 +949,9 @@ def run_uncertainty_explanation_experiment(
 
             infoboost_explain(
                 model=xgboost_error_model,
-                x_val=x_val.numpy(),
-                y_val=y_val.numpy(),
-                instances_to_explain=x_test.numpy()[indices_is[ind_identifier]],
+                x_val=x_val.cpu().detach().numpy(),
+                y_val=y_val.cpu().detach().numpy(),
+                instances_to_explain=x_test.cpu().detach().numpy()[indices_is[ind_identifier]],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 var_names=var_names + ["bias"],
