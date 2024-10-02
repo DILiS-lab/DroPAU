@@ -7,15 +7,20 @@ library(magick)
 theme_set(theme_bw(base_size = 26))
 
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-
-
+experiment <- "importances_syn_mixed"
+path <- paste0("data/", experiment, "/")
+if (experiment == "importances_syn_base") {
+  colors <- c("#888888", "#CC6677")
+} else {
+  colors <- c("#888888", "#332288", "#CC6677")
+}
 ############## VFA vs CLUE ############## 
 process_df <- function(df){
   return(df |>
            arrange(desc(feature_importance)) |>
            head(15) |>
-           mutate(noise_feature = if_else(grepl("noise", feature_name, fixed = TRUE), "Noise feature", "Mean feature"),
-                  feature_name = if_else(noise_feature == "noise", paste0("**", feature_name, "**"),feature_name)))
+           mutate(noise_feature = if_else(grepl("noise", feature_name, fixed = TRUE), "Noise feature", if_else(grepl("mixed", feature_name, fixed = TRUE), "Mixed feature", "Mean feature")),
+                  feature_name = if_else(noise_feature %in% c("noise", "mixed"), paste0("**", feature_name, "**"),feature_name)))
 }
 
 plot_exp <- function(df, rank_acc, mass_acc, title, y_side="left", x_side="bottom"){
@@ -24,7 +29,7 @@ plot_exp <- function(df, rank_acc, mass_acc, title, y_side="left", x_side="botto
            geom_bar(stat = "identity", width = 0.6) +
            scale_y_discrete(position = y_side) + 
            scale_x_continuous(position = x_side) + 
-           scale_fill_manual(values=c("#888888", "#CC6677")) +
+           scale_fill_manual(values= colors) +
            xlab("Feature Importance") +
            ylab("") +
            geom_label(
@@ -52,28 +57,28 @@ plot_exp <- function(df, rank_acc, mass_acc, title, y_side="left", x_side="botto
 }
 
 
-clue_high <- read_csv("data/importances/CLUE_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
-clue_low <- read_csv("data/importances/CLUE_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
-clue_random <- read_csv("data/importances/CLUE_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")
+clue_high <- read_csv(paste0(path, "CLUE_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
+clue_low <- read_csv(paste0(path, "CLUE_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
+clue_random <- read_csv(paste0(path, "CLUE_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv"))
 
-varx_high <- read_csv("data/importances/VarX_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
-varx_low <- read_csv("data/importances/VarX_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
-varx_random <- read_csv("data/importances/VarX_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
+varx_high <- read_csv(paste0(path, "VarX_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
+varx_low <- read_csv(paste0(path, "VarX_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
+varx_random <- read_csv(paste0(path, "VarX_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
 
-varxig_high <- read_csv("data/importances/VarXIG_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
-varxig_low <- read_csv("data/importances/VarXIG_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
-varxig_random <- read_csv("data/importances/VarXIG_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
+varxig_high <- read_csv(paste0(path, "VarXIG_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
+varxig_low <- read_csv(paste0(path, "VarXIG_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
+varxig_random <- read_csv(paste0(path, "VarXIG_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
 
-varxlrp_high <- read_csv("data/importances/VarXLRP_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
-varxlrp_low <- read_csv("data/importances/VarXLRP_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
-varxlrp_random <- read_csv("data/importances/VarXLRP_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv") 
+varxlrp_high <- read_csv(paste0(path, "VarXLRP_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
+varxlrp_low <- read_csv(paste0(path, "VarXLRP_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
+varxlrp_random <- read_csv(paste0(path, "VarXLRP_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")) 
 
-infoshap_high <- read_csv("data/importances/infoshap_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")
-infoshap_low <- read_csv("data/importances/infoshap_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")
-infoshap_random <- read_csv("data/importances/infoshap_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv")
+infoshap_high <- read_csv(paste0(path, "infoshap_highU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv"))
+infoshap_low <- read_csv(paste0(path, "infoshap_lowU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv"))
+infoshap_random <- read_csv(paste0(path, "infoshap_randomU_importances_n_40000_s_2.00_n_test_1500_n_exp_200.csv"))
 
 
-global_metrics <- read_csv("data/importances/noise_feature_global_loc_metrics.csv")
+global_metrics <- read_csv(paste0(path, "noise_feature_global_loc_metrics.csv"))
 
 h_varx <- global_metrics |> filter(model=="VarX", unc=="high")
 r_varx <- global_metrics |> filter(model=="VarX", unc=="random")
@@ -120,6 +125,7 @@ p_infoshap_random <-plot_exp(process_df(infoshap_random), format(round(r_infosha
 legend <- get_legend(
   p_clue_high + theme(legend.position = "top", legend.text= element_text(size=10), legend.title = element_blank()) + guides(fill = guide_legend(nrow = 1, title = "Feature Type")))
 
+p_clue_high + theme(legend.position = "top")
 grid <- plot_grid(p_varxig_high, p_varxlrp_high, p_varx_high, p_infoshap_high, p_clue_high,
                   p_varxig_random, p_varxlrp_random, p_varx_random, p_infoshap_random,  p_clue_random,
                   p_varxig_low,  p_varxlrp_low,  p_varx_low, p_infoshap_low, p_clue_low,
@@ -137,10 +143,10 @@ vfa_vs_baselines <- plot_grid(legend, grid, nrow=2, rel_heights = c(0.05, 1)) +
 
 
 shap.1 = ggdraw() +
-  draw_image(magick::image_read_pdf("data/variance_output.pdf", density = 600)) +
+  draw_image(magick::image_read_pdf(paste0(path, "variance_output.pdf"), density = 600)) +
   theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
 shap.2 = ggdraw() +
-  draw_image(magick::image_read_pdf("data/mean_output.pdf", density = 600)) +
+  draw_image(magick::image_read_pdf(paste0(path, "mean_output.pdf"), density = 600)) +
   theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
 
 left <- plot_grid(shap.1, shap.2, ncol=1,  
@@ -158,5 +164,5 @@ left <- plot_grid(shap.1, shap.2, ncol=1,
           rel_widths = c(0.25, 1)))
 
 
-ggsave("base_syn_experiment_v4.pdf", final, width=12, height=4.75, device=cairo_pdf)
+ggsave(paste0(experiment, "_experiment_v5.pdf"), final, width=12, height=4.75, device=cairo_pdf)
   

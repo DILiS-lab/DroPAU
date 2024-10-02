@@ -25,8 +25,9 @@ process_lipschitz <- function(df, dataset){
 lip_combined <- process_lipschitz(read_csv("data/lipschitz/red_wine_out_lipschitz_fixed.csv"), "Red Wine") |>
   union(process_lipschitz(read_csv("data/lipschitz/ailerons_out_lipschitz_fixed.csv"), "Ailerons")) |>
   union(process_lipschitz(read_csv("data/lipschitz/synthetic_out_lipschitz_fixed.csv"), "Synthetic")) |>
+  union(process_lipschitz(read_csv("data/lipschitz/synthetic_mixed_5_out_lipschitz_fixed.csv"), "Syn. Mixed")) |>
   union(process_lipschitz(read_csv("data/lipschitz/lsat_out_lipschitz_fixed.csv"), "LSAT")) |>
-  mutate(dataset = factor(dataset, levels=c("Red Wine", "Ailerons", "LSAT", "Synthetic")))
+  mutate(dataset = factor(dataset, levels=c("Red Wine", "Ailerons", "LSAT", "Synthetic", "Syn. Mixed")))
 
 
 (lipschitz <- ggplot(lip_combined, aes(x=dataset, y=value, fill=method, color=method)) +
@@ -34,12 +35,12 @@ lip_combined <- process_lipschitz(read_csv("data/lipschitz/red_wine_out_lipschit
   scale_y_continuous(trans = "log10") +
   ylab("Lipshitz Estimate") +
   xlab("Dataset") + 
-  guides(fill = guide_legend(ncol= 1, title = "Method"), color = guide_legend(ncol = 1, title = "Method")) +
+  guides(fill = guide_legend(ncol= 5, title = "Method"), color = guide_legend(ncol = 5, title = "Method")) +
   scale_fill_manual(values=c("#88CCEE", "#CC6677", "#44AA99", "#DDCC77", "#882255")) +
   scale_color_manual(values=c("#88CCEE", "#CC6677", "#44AA99", "#DDCC77", "#882255")) +
   theme_bw() +
   theme(
-    # legend.position = "top", 
+    legend.position = "top",
     legend.text= element_text(size=14), 
     legend.title = element_blank(),
     legend.box.margin=margin(0,0,0,-5),
@@ -48,4 +49,5 @@ lip_combined <- process_lipschitz(read_csv("data/lipschitz/red_wine_out_lipschit
     plot.margin = unit(c(0.05, 0.05, 0, 0.05), "cm")))
 
 
-ggsave("Lipschitz_robustness_v4.pdf", lipschitz, width=10, height=3.75, device=cairo_pdf)
+ggsave("Lipschitz_robustness_v7.pdf", lipschitz, width=10, height=3.75, device=cairo_pdf)
+
