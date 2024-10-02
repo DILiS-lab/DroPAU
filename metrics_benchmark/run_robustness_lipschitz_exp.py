@@ -53,7 +53,12 @@ def get_parser():
         default="synthetic",
         help="Name of dataset",
     )
-
+    parser.add_argument(
+        "--explain_method",
+        type=str,
+        default="varx", #"varx_ig", "varx_lrp", "varx", "clue", "infoshap"
+        help="Name of explanation method",
+    )
     return parser
 
 
@@ -64,18 +69,19 @@ def main():
     user_args = parser.parse_args()
 
     for dataset in [user_args.dataset]:  # "lsat", "ailerons", "red_wine", "synthetic"
-        if dataset == "synthetic":
+        if 'synthetic' in dataset:
             data = get_synthetic_data(
                 41500,
                 70,
                 5,
+                0 if dataset == "synthetic" else int(dataset.split("_")[2]),
                 n_samples_train=32000,
                 n_samples_val=8000,
                 n_samples_test=1500,
             )
 
-            out_robust = robustness_experiment(**data, dataset=f"{dataset}_fixed")
-            write_to_json(out_robust, f"results/{dataset}_out_lipschitz_fixed.json")
+            out_robust = robustness_experiment(**data, dataset=f"{dataset}_fixed", var_xai_methods=[user_args.explain_method])
+            write_to_json(out_robust, f"results/{dataset}_out_lipschitz_fixed_{user_args.explain_method}.json")
 
         else:
             if dataset == "red_wine":

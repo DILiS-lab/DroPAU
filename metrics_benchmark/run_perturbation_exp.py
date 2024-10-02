@@ -47,12 +47,13 @@ def write_to_json(object, filename):
 def main():
     torch.set_float32_matmul_precision("medium")
 
-    for dataset in ["synthetic", "red_wine", "ailerons", "lsat"]:
-        if dataset == "synthetic":
+    for dataset in ["synthetic_mixed_5"]: #["synthetic", "red_wine", "ailerons", "lsat"]:
+        if 'synthetic' in dataset:
             data = get_synthetic_data(
                 41500,
                 70,
                 5,
+                0 if dataset == "synthetic" else int(dataset.split("_")[2]),
                 n_samples_train=32000,
                 n_samples_val=8000,
                 n_samples_test=1500,
@@ -65,7 +66,7 @@ def main():
             )
             write_to_json(
                 {"perturb_pos": out_perturb_pos, "perturb_neg": out_perturb_neg},
-                "synthetic_out_perturbation.json",
+                f"{dataset}_out_perturbation.json",
             )
 
         else:

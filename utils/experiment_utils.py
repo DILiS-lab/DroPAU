@@ -120,6 +120,7 @@ def get_data(
     identifier: str,
     k_mean: int = 70,
     k_noise: int = 5,
+    k_mixed: int = 0,
     random_state: int = 1,
 ):
     """
@@ -134,6 +135,7 @@ def get_data(
     - identifier (str): Unique identifier for the dataset file.
     - k_mean (int, optional): Number of features for the linear model (default is 70).
     - k_noise (int, optional): Number of features for the noise model (default is 5).
+    - k_mixed (int, optional): Number of features for the mixed model (default is 5).
     - random_state (int, optional): Seed for random number generation (default is 1).
 
     Returns:
@@ -172,8 +174,22 @@ def get_data(
         ]
         inputs = np.concatenate((inputs, data_noise[0]), axis=1)
 
+
+        if k_mixed > 0:
+            data_mixed = noise_model(
+                n, k_mixed, model_error_noise
+            )
+            # standardize the data
+            location_change = (data_mixed[1]-np.mean(data_mixed[1]))/np.std(data_mixed[1])
+            # scale to the same range as the original data for meaningful contribution
+            shift = np.random.normal(loc=location_change*1.2, scale=noise_scaler*data_mixed[1], size=n) 
+            inputs = np.concatenate((inputs, data_mixed[0]), axis=1)
+            output = output + shift
+            feature_names += [f"mixed_feature_{i}" for i in range(data_mixed[0].shape[1])]
+
+
         x_train, x_test, y_train, y_test, _, noise_std_test = train_test_split(
-            inputs, output, data_noise[1], test_size=n_test, random_state=1
+            inputs, output, data_noise[1]+noise_scaler*data_mixed[1], test_size=n_test, random_state=1
         )  # We need the noise_std_test to compare with the pnn uncertainties
         x_train, x_val, y_train, y_val = train_test_split(
             x_train, y_train, test_size=0.2, random_state=1
@@ -265,10 +281,10 @@ def train_pnn(
     }
     model.mse_only = True
     model.fit(
-        X_train=x_train if isinstance(x_train, np.ndarray) else x_train.numpy(),
-        y_train=y_train if isinstance(y_train, np.ndarray) else y_train.numpy(),
-        X_eval=x_val if isinstance(x_val, np.ndarray) else x_val.numpy(),
-        y_eval=y_val if isinstance(y_val, np.ndarray) else y_val.numpy(),
+        X_train=x_train if isinstance(x_train, np.ndarray) else x_train.cpu().detach().numpy(),
+        y_train=y_train if isinstance(y_train, np.ndarray) else y_train.cpu().detach().numpy(),
+        X_eval=x_val if isinstance(x_val, np.ndarray) else x_val.cpu().detach().numpy(),
+        y_eval=y_val if isinstance(y_val, np.ndarray) else y_val.cpu().detach().numpy(),
         batch_size=64,
         patience=20,
         adversarial_training=False,
@@ -276,8 +292,8 @@ def train_pnn(
     )
 
     model.eval()
-    x_test = x_test if isinstance(x_test, np.ndarray) else x_test.numpy()
-    y_test = y_test if isinstance(y_test, np.ndarray) else y_test.numpy()
+    x_test = x_test if isinstance(x_test, np.ndarray) else x_test.cpu().detach().numpy()
+    y_test = y_test if isinstance(y_test, np.ndarray) else y_test.cpu().detach().numpy()
     mse_before = np.mean(np.square(model.predict_target(x_test) - y_test))
     model.train()
 
@@ -285,10 +301,10 @@ def train_pnn(
     model.mse_only = False
     trainer_params["max_epochs"] = 100
     model.fit(
-        X_train=x_train if isinstance(x_train, np.ndarray) else x_train.numpy(),
-        y_train=y_train if isinstance(y_train, np.ndarray) else y_train.numpy(),
-        X_eval=x_val if isinstance(x_val, np.ndarray) else x_val.numpy(),
-        y_eval=y_val if isinstance(y_val, np.ndarray) else y_val.numpy(),
+        X_train=x_train if isinstance(x_train, np.ndarray) else x_train.cpu().detach().numpy(),
+        y_train=y_train if isinstance(y_train, np.ndarray) else y_train.cpu().detach().numpy(),
+        X_eval=x_val if isinstance(x_val, np.ndarray) else x_val.cpu().detach().numpy(),
+        y_eval=y_val if isinstance(y_val, np.ndarray) else y_val.cpu().detach().numpy(),
         batch_size=64,
         patience=40,
         adversarial_training=False,
@@ -299,8 +315,8 @@ def train_pnn(
         model.checkpoint_callback.best_model_path, **model_kwargs
     )
     model.eval()
-    x_test = x_test if isinstance(x_test, np.ndarray) else x_test.numpy()
-    y_test = y_test if isinstance(y_test, np.ndarray) else y_test.numpy()
+    x_test = x_test if isinstance(x_test, np.ndarray) else x_test.cpu().detach().numpy()
+    y_test = y_test if isinstance(y_test, np.ndarray) else y_test.cpu().detach().numpy()
     mse_after = np.mean(np.square(model.predict_target(x_test) - y_test))
 
     # save the model
@@ -591,9 +607,9 @@ def varx_lrp_explain(
                 "feature_importance": feature_importances,
                 "importance_directed": attribution,
                 "var_names": var_names,
-                "instances_to_explain": instances_to_explain_sorted.numpy()
+                "instances_to_explain": instances_to_explain_sorted.cpu().detach().numpy()
                 if sort
-                else instances_to_explain.cpu().numpy(),
+                else instances_to_explain.cpu().detach().numpy(),
             },
         )
     else:
@@ -601,9 +617,9 @@ def varx_lrp_explain(
             "feature_importance": feature_importances,
             "importance_directed": attribution,
             "var_names": var_names,
-            "instances_to_explain": instances_to_explain_sorted.numpy()
+            "instances_to_explain": instances_to_explain_sorted.cpu().detach().numpy()
             if sort
-            else instances_to_explain.cpu().numpy(),
+            else instances_to_explain.cpu().detach().numpy(),
         }
 
 
@@ -649,9 +665,9 @@ def varx_ig_explain(
                 "feature_importance": feature_importances,
                 "importance_directed": attribution,
                 "var_names": var_names,
-                "instances_to_explain": instances_to_explain_sorted.numpy()
+                "instances_to_explain": instances_to_explain_sorted.cpu().detach().numpy()
                 if sort
-                else instances_to_explain.cpu().numpy(),
+                else instances_to_explain.cpu().detach().numpy(),
             },
         )
     else:
@@ -659,7 +675,7 @@ def varx_ig_explain(
             "feature_importance": feature_importances,
             "importance_directed": attribution,
             "var_names": var_names,
-            "instances_to_explain": instances_to_explain_sorted.numpy()
+            "instances_to_explain": instances_to_explain_sorted.cpu().numpy()
             if sort
             else instances_to_explain.cpu().numpy(),
         }
@@ -738,6 +754,7 @@ def run_uncertainty_explanation_experiment(
     noise_scaler=2.0,
     n=40000,
     n_test=1500,
+    k_mixed=0,
     remake_data=True,
     overwrite_pnn=True,
     beta_gaussian=False,
@@ -771,10 +788,12 @@ def run_uncertainty_explanation_experiment(
         remake_data=remake_data,
         n_train=n,
         n_test=n_test,
+        k_mixed=k_mixed,
         noise_scaler=noise_scaler,
         save_dir=save_dir,
         identifier=identifier,
     )
+    var_names = list(var_names)
     dtype = torch.float32
     x_train = torch.tensor(x_train, dtype=dtype)
     y_train = torch.tensor(y_train, dtype=dtype)
@@ -860,12 +879,20 @@ def run_uncertainty_explanation_experiment(
         for i in range(explainer_repeats):
             print(f"Running repeat {i}")
             identifier_run = f"{identifier}_run_{i}_{ind_identifier}"
+            explain_mean(
+                pnn=pnn,
+                x_train=x_train.cpu().detach().numpy(),
+                instances_to_explain=x_test.cpu().detach().numpy()[indices],
+                identifier=identifier_run,
+                save_dir=save_dir,
+                var_names=var_names,
+            )
             start = timer()
-
+            
             varx_explain(
                 pnn=pnn,
-                x_train=x_train.numpy(),
-                instances_to_explain=x_test.numpy()[indices],
+                x_train=x_train.cpu().detach().numpy(),
+                instances_to_explain=x_test.cpu().detach().numpy()[indices],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 var_names=var_names,
@@ -896,7 +923,7 @@ def run_uncertainty_explanation_experiment(
             start = timer()
             varx_ig_explain(
                 pnn=pnn,
-                instances_to_explain=x_test.numpy()[indices],
+                instances_to_explain=x_test.cpu().detach().numpy()[indices],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 var_names=var_names,
@@ -909,7 +936,7 @@ def run_uncertainty_explanation_experiment(
             start = timer()
             varx_lrp_explain(
                 pnn=pnn,
-                instances_to_explain=x_test.numpy()[indices],
+                instances_to_explain=x_test.cpu().detach().numpy()[indices],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 save=True,
@@ -923,9 +950,9 @@ def run_uncertainty_explanation_experiment(
 
             infoboost_explain(
                 model=xgboost_error_model,
-                x_val=x_val.numpy(),
-                y_val=y_val.numpy(),
-                instances_to_explain=x_test.numpy()[indices_is[ind_identifier]],
+                x_val=x_val.cpu().detach().numpy(),
+                y_val=y_val.cpu().detach().numpy(),
+                instances_to_explain=x_test.cpu().detach().numpy()[indices_is[ind_identifier]],
                 identifier=identifier_run,
                 save_dir=save_dir,
                 var_names=var_names + ["bias"],
@@ -935,14 +962,7 @@ def run_uncertainty_explanation_experiment(
             end = timer()
             infoshap_elapsed.append(end - start)
 
-            explain_mean(
-                pnn=pnn,
-                x_train=x_train.numpy(),
-                instances_to_explain=x_test.numpy()[indices],
-                identifier=identifier_run,
-                save_dir=save_dir,
-                var_names=var_names,
-            )
+            
 
     for method in ["VarX", "CLUE", "VarXIG", "VarXLRP", "infoshap"]:
         for u in ["highU", "lowU", "randomU"]:

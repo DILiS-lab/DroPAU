@@ -117,8 +117,7 @@ def main():
                     **data,
                     noise_levels=[1, 2],
                     n_noise_features_list=[1, 2, 5],
-                    dataset=f"t_{dataset}_{run}",
-                )
+                    dataset=f"t_{dataset}_{run}"                )
                 write_to_json(
                     {
                         "local_localization_precision": out_localization_precision,
@@ -127,6 +126,57 @@ def main():
                     },
                     f"results/fixed_{dataset}_out_localization_{run}.json",
                 )
+        elif("synthetic" in dataset): #mixed data
+            n_noise_features_mixed = int(dataset.split("_")[2])
+            data = get_synthetic_data(
+                    41500,
+                    70,
+                    0,
+                    n_samples_train=32000,
+                    n_samples_val=8000,
+                    n_samples_test=1500,
+                )
+            print(
+                    f"----------------------------------- NORMAL NOISE MODEL DC {dataset} MIXED -------------------------------"
+                )
+            (
+                out_localization_precision,
+                out_localization_mass_accuracy,
+                out_global_metrics,
+            ) = localization_experiment(
+                **data,
+                noise_levels=[ 2],
+                n_noise_features_list=[5],
+                dataset=f"t_{dataset}", n_noise_features_mixed=n_noise_features_mixed,
+                 use_simple_noise_model=False )
+            write_to_json(
+                    {
+                        "local_localization_precision": out_localization_precision,
+                        "local_localization_mass_accuracy": out_localization_mass_accuracy,
+                        "global_metrics": out_global_metrics,
+                    },
+                    f"results/fixed_{dataset}_out_localization.json",
+                )
+            print(
+                    f"----------------------------------- SIMPLE NOISE MODEL DC {dataset} MIXED -------------------------------"
+                )
+            (
+                out_localization_precision,
+                out_localization_mass_accuracy,
+                out_global_metrics,
+            ) = localization_experiment(
+                **data,
+                noise_levels=[2],
+                n_noise_features_list=[5],
+                dataset=f"t_{dataset}", n_noise_features_mixed=n_noise_features_mixed,
+                 use_simple_noise_model=True )
+            write_to_json(
+                    {
+                        "local_localization_precision": out_localization_precision,
+                        "local_localization_mass_accuracy": out_localization_mass_accuracy,
+                        "global_metrics": out_global_metrics,
+                    },
+                    f"results/fixed_{dataset}_out_localization_simple.json",)
 
         else:
             for repeat in [1, 50]:
@@ -197,3 +247,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print("Done Localization")

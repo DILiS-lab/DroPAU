@@ -57,6 +57,7 @@ def robustness_experiment(
     y_val: np.ndarray,
     y_test: np.ndarray,
     dataset: str,
+    var_xai_methods: list = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"],
 ) -> list:
     """
     :param epsilons: The perturbation sizes
@@ -68,9 +69,8 @@ def robustness_experiment(
     :param y_test: A numpy array of shape (N, 1)
     :return: A list of robustness values for each epsilon
     """
-    var_xai_methods = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
     robustness_values = {}
-    # Models are trained outside to loop to use same model for all xai_methods (where applicable)
+    # Models are trained outside the loop to use same model for all xai_methods (where applicable)
     pnn_model = train_pnn(
         x_train=x_train,
         x_val=x_val,
