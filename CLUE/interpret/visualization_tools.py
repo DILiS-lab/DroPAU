@@ -62,7 +62,7 @@ def latent_project_gauss(BNN, VAE, dset, batch_size=1024, cuda=True, prob_BNN=Tr
     tr_aleatoric_vec = []
     tr_epistemic_vec = []
 
-    for j, (x, y_l) in enumerate(loader):
+    for j, (x, y_l, *_) in enumerate(loader):
         zz = VAE.recongnition(x.to(torch.float32)).loc.data.cpu().numpy()
         # Note that naming is wrong and this is actually std instead of entropy
         if prob_BNN:
@@ -71,7 +71,13 @@ def latent_project_gauss(BNN, VAE, dset, batch_size=1024, cuda=True, prob_BNN=Tr
                 mu_vec, std_vec
             )
         else:
-            mu, std = BNN.predict(x.to(torch.float32), grad=False)
+            try:
+                mu, std = BNN.predict(x.to(torch.float32), grad=False)
+            except AttributeError:
+                with torch.no_grad():
+                    device = next(BNN.parameters()).device  # use same device as model
+                    x = x.to(device).to(torch.float32)  
+                    mu, std = BNN(x)
             total_entropy = std
             aleatoric_entropy = std
             epistemic_entropy = std * 0
@@ -80,8 +86,8 @@ def latent_project_gauss(BNN, VAE, dset, batch_size=1024, cuda=True, prob_BNN=Tr
         tr_aleatoric_vec.append(aleatoric_entropy.data)
 
         z_train.append(zz)
-        y_train.append(y_l.numpy())
-        x_train.append(x.numpy())
+        y_train.append(y_l.cpu().numpy())
+        x_train.append(x.cpu().numpy())
 
     tr_aleatoric_vec = torch.cat(tr_aleatoric_vec).cpu().numpy()
     tr_epistemic_vec = torch.cat(tr_epistemic_vec).cpu().numpy()

@@ -33,7 +33,7 @@ def train_VAE(
             batch_size=batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=3,
+            num_workers=8,
         )
         valloader = torch.utils.data.DataLoader(
             valset,
@@ -49,7 +49,7 @@ def train_VAE(
             batch_size=batch_size,
             shuffle=True,
             pin_memory=False,
-            num_workers=3,
+            num_workers=8,
         )
         valloader = torch.utils.data.DataLoader(
             valset,
@@ -62,6 +62,7 @@ def train_VAE(
     ## ---------------------------------------------------------------------------------------------------------------------
     # net dims
     cprint("c", "\nNetwork:")
+    print(net)
 
     epoch = 0
 
@@ -80,11 +81,14 @@ def train_VAE(
 
     tic0 = time.time()
     for i in range(epoch, nb_epochs):
+        print("  it %d/%d" % (i, nb_epochs))
         net.set_mode_train(True)
 
         tic = time.time()
         nb_samples = 0
-        for x, y in trainloader:
+        for x, y, *_ in trainloader:
+
+
             if flat_ims:
                 x = x.view(x.shape[0], -1)
             if Nclass is not None:
@@ -111,7 +115,7 @@ def train_VAE(
         # ---- dev
         if i % nb_its_dev == 0:
             nb_samples = 0
-            for j, (x, y) in enumerate(valloader):
+            for j, (x, y, *_) in enumerate(valloader):
                 if flat_ims:
                     x = x.view(x.shape[0], -1)
                 if Nclass is not None:

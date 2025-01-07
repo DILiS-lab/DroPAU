@@ -51,25 +51,11 @@ def write_to_json(object, filename):
         json.dump(object, f, ensure_ascii=False, indent=4, default=to_serializable)
 
 
-def get_parser():
-    parser = argparse.ArgumentParser(description="Localization experiment")
-    parser.add_argument(
-        "--dataset",
-        type=str,
-        default="synthetic",
-        help="Name of dataset",
-    )
-
-    return parser
-
 
 def main():
     torch.set_float32_matmul_precision("medium")
 
-    parser = get_parser()
-    user_args = parser.parse_args()
-
-    for dataset in [user_args.dataset]:  # "red_wine", "ailerons", "lsat"
+    for dataset in ["synthetic", "synthetic_mixed_5", "red_wine", "ailerons", "lsat"]:
         if dataset == "synthetic":
             data = get_synthetic_data(
                 41500,
