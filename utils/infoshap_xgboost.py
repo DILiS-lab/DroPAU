@@ -39,7 +39,7 @@ def infoboost_explain(
     """
     Explain the model using InfoBoost
     """
-    error = y_val - model.predict(x_val)
+    error = np.log(np.square(y_val - model.predict(x_val)))
 
     error_model = train_xgboost_var(error, x_val)
 
@@ -61,7 +61,7 @@ def infoboost_explain(
     output = {
             "feature_importance": feature_importances.values,
             "importance_directed": attribution.values,
-            "var_names": var_names,
+            "var_names": shapley_values.columns,
             "instances_to_explain": instances_to_explain_sorted
             if sort
             else instances_to_explain,

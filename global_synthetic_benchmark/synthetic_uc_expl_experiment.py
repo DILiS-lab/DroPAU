@@ -24,7 +24,7 @@ def main():
     parser.add_argument(
         "--explainer_repeats",
         type=int,
-        default=5,
+        default=1,
         help="Number times the explanation is calculated for error bars and run time benchmarks (default: 5)",
     )
     parser.add_argument(
@@ -52,10 +52,24 @@ def main():
     parser.add_argument(
         "--beta_gaussian", action="store_true", help="Use beta gaussian loss"
     )
+
+
+    parser.add_argument(
+        "--k_mixed",
+        type=int,
+        default=0,
+        help="Number of mixed samples to use in the explanation (default: 0)",
+    )
+    parser.add_argument(
+        "--run_id",
+        type=int,
+        default=0,
+        help="Run ID (default: 0)")
+    
     args = parser.parse_args()
 
-    k_mixed = 0
-    print("Running uncertainty explanation experiment with k_mixed=5")  
+    k_mixed = args.k_mixed
+    print("Running uncertainty explanation experiment with k_mixed={}".format(k_mixed))  
     run_uncertainty_explanation_experiment(
         n_instances_to_explain=args.n_instances_to_explain,
         explainer_repeats=args.explainer_repeats,
@@ -65,6 +79,7 @@ def main():
         n_test=args.n_test,
         remake_data=args.remake_data,
         beta_gaussian=args.beta_gaussian,
+        run_id=args.run_id
     )
 
     print("Done!")

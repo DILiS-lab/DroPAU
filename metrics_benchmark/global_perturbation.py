@@ -20,9 +20,6 @@ def perturb_top_k_global_features(
     :param x: The instance to perturb
     :param explanation: The explanation of the instance
     :param k: The number of features to perturb
-    :param direction: The direction to perturb the features "positive" or "negative"
-                        (positive increases the feature value which contributes positvely to the prediction value,
-                        negative increases the feature value which contributes negative to the prediction value)
     :param epsilon: The perturbation size
     :return: The perturbed instance
     """
@@ -55,7 +52,7 @@ def get_global_perturbation_delta(
     :param explain_method: The explanation method to use "varx", "clue", "infoshap"
     :param X: A numpy array of shape (N, D)
     :param y: A numpy array of shape (N, 1)
-    :return: explanation
+    :return: The perturbation delta
     """
     if explain_method != "infoshap":
         model.to("cuda")

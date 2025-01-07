@@ -66,7 +66,7 @@ def get_perturbation_delta(
     :param explain_method: The explanation method to use "varx", "clue", "infoshap"
     :param X: A numpy array of shape (N, D)
     :param y: A numpy array of shape (N, 1)
-    :return: explanation
+    :return: The perturbation delta
     """
     if explain_method != "infoshap":
         model.to("cuda")

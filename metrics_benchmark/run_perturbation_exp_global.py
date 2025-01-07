@@ -1,6 +1,6 @@
 import json
 from functools import singledispatch
-
+import os
 import numpy as np
 import torch
 from dataset_utils import (
@@ -46,49 +46,52 @@ def write_to_json(object, filename):
 
 def main():
     torch.set_float32_matmul_precision("medium")
-    datasets = ["synthetic_mixed_5"] #["synthetic", "red_wine", "ailerons", "lsat"]
+    datasets = ["synthetic", "synthetic_mixed_5"] #["synthetic_mixed_5", "synthetic", "red_wine", "ailerons", "lsat"]
     methods = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
-    for dataset in datasets:
-        if "synthetic" in dataset: 
-            data = get_synthetic_data(
-                41500,
-                70,
-                5,
-                0 if dataset == "synthetic" else int(dataset.split("_")[2]),
-                n_samples_train=25000,  # 32000,
-                n_samples_val=15000,  # 8000,
-                n_samples_test=1500,
-            )
+    if not os.path.exists("results/global_perturbation"):
+        os.makedirs("results/global_perturbation")
+    for run_id in range(12):
+        for dataset in datasets:
+            if "synthetic" in dataset: 
+                data = get_synthetic_data(
+                    41500,
+                    70,
+                    5,
+                    0 if dataset == "synthetic" else int(dataset.split("_")[2]),
+                    n_samples_train=25000,  # 32000,
+                    n_samples_val=15000,  # 8000,
+                    n_samples_test=1500,
+                )
 
-            out_perturb = perturbation_experiment(
-                **data, epsilons=[1], top_k=3, explain_methods=methods
-            )
-
-            write_to_json(
-                {"perturb": out_perturb},
-                f"results/{dataset}_out_perturbation_global.json",
-            )
-        else:
-            for repeat in [1]:
-                if dataset == "red_wine":
-                    data = get_red_wine_dataset()
-                elif dataset == "ailerons":
-                    data = get_ailerons_dataset()
-                elif dataset == "lsat":
-                    data = get_LSAT_dataset()
-
-                data["x_train"] = np.repeat(data["x_train"], repeat, axis=0)
-                data["y_train"] = np.repeat(data["y_train"], repeat, axis=0)
-
-                data = standardize_output(data)
                 out_perturb = perturbation_experiment(
-                    **data, epsilons=[1], top_k=3, small_model=False
+                    **data, epsilons=[1], top_k=3, explain_methods=methods
                 )
 
                 write_to_json(
                     {"perturb": out_perturb},
-                    f"metrics_benchmark/results/{dataset}_{repeat}_out_perturbation_global.json",
+                    f"results/global_perturbation/{dataset}_out_perturbation_global_{run_id}.json",
                 )
+            else:
+                for repeat in [1]:
+                    if dataset == "red_wine":
+                        data = get_red_wine_dataset()
+                    elif dataset == "ailerons":
+                        data = get_ailerons_dataset()
+                    elif dataset == "lsat":
+                        data = get_LSAT_dataset()
+
+                    data["x_train"] = np.repeat(data["x_train"], repeat, axis=0)
+                    data["y_train"] = np.repeat(data["y_train"], repeat, axis=0)
+
+                    data = standardize_output(data)
+                    out_perturb = perturbation_experiment(
+                        **data, epsilons=[1], top_k=3, small_model=False
+                    )
+                    
+                    write_to_json(
+                        {"perturb": out_perturb},
+                        f"results/global_perturbation/{dataset}_{repeat}_out_perturbation_global_{run_id}.json",
+                    )
     print("Done")
 
 

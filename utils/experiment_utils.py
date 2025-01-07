@@ -13,11 +13,12 @@ from timeit import default_timer as timer
 
 from .infoshap_xgboost import train_xgboost, train_xgboost_var, infoboost_explain
 from CLUE.VAE.fc_gauss import VAE_gauss_net
+from CLUE.VAE.models import MNISTplus_recognition_resnet, MNISTplus_generator_resnet
 from CLUE.VAE.train import train_VAE
 from CLUE.interpret.CLUE import CLUE
 from CLUE.interpret.visualization_tools import latent_project_gauss
 from CLUE.src.utils import Datafeed, Ln_distance
-
+from CLUE.VAE.MNISTconv_bern import MNISTplusconv_VAE_bern_net
 
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 warnings.filterwarnings("ignore", message=".*No audio backend is available.*")
@@ -167,13 +168,15 @@ def get_data(
         data_noise = noise_model(n, k_noise, model_error_noise)
 
         # generate the heteroscedastic noise based on output of the noise model
-        noise = np.random.normal(loc=0.0, scale=noise_scaler * data_noise[1], size=n)
+        noise_std = noise_scaler * data_noise[1]
+        noise = np.random.normal(loc=0.0, scale=noise_std, size=n)
         output = output + noise
         feature_names = [f"feature_{i}" for i in range(inputs.shape[1])] + [
             f"noise_feature_{i}" for i in range(data_noise[0].shape[1])
         ]
         inputs = np.concatenate((inputs, data_noise[0]), axis=1)
 
+        
 
         if k_mixed > 0:
             data_mixed = noise_model(
@@ -187,12 +190,15 @@ def get_data(
             output = output + shift
             feature_names += [f"mixed_feature_{i}" for i in range(data_mixed[0].shape[1])]
 
+            noise_std = np.sqrt(noise_std**2 + noise_scaler*data_mixed[1]**2)
+
+
 
         x_train, x_test, y_train, y_test, _, noise_std_test = train_test_split(
-            inputs, output, data_noise[1]+noise_scaler*data_mixed[1], test_size=n_test, random_state=1
+            inputs, output, data_noise[1]+noise_std, test_size=n_test, random_state=random_state
         )  # We need the noise_std_test to compare with the pnn uncertainties
         x_train, x_val, y_train, y_val = train_test_split(
-            x_train, y_train, test_size=0.2, random_state=1
+            x_train, y_train, test_size=0.2, random_state=random_state
         )
 
         # normalize target
@@ -211,7 +217,7 @@ def get_data(
         y_means = scaler.mean_
         y_stds = scaler.scale_
         np.savez(
-            f"{save_dir}data_{identifier}.npz",
+            f"{save_dir}data_{identifier}_random_state_{random_state}.npz",
             x_train=x_train,
             y_train=y_train,
             x_test=x_test,
@@ -334,6 +340,169 @@ def train_pnn(
     return model
 
 
+def clue_explain_images(
+    pnn,
+    trainset,
+    valset,
+    testset,
+    ind_instances_to_explain,
+    identifier,
+    save_dir=None,
+    save=False,
+    sort=True,
+    skip_vae_training=False,
+):
+    if save_dir and not os.path.exists(f"{save_dir}/models/"):
+        os.makedirs(f"{save_dir}/models/")
+    save_dir_vae = f"{save_dir}/models/VAE_{identifier}"
+    if save_dir and not os.path.exists(save_dir_vae):
+        os.makedirs(save_dir_vae)
+
+    latent_dim = 16
+    batch_size = 32
+    nb_epochs = 100
+    
+    lr = 7e-4
+    early_stop = 5
+
+    cuda = torch.cuda.is_available()
+    if cuda:
+        pnn.to("cuda")
+    mps = torch.backends.mps.is_available()
+    if mps:
+        pnn.to("mps")
+
+    # Define encoder and decoder for the VAE
+    encoder = MNISTplus_recognition_resnet(latent_dim)
+    decoder = MNISTplus_generator_resnet(latent_dim)
+
+    VAE = MNISTplusconv_VAE_bern_net(latent_dim, encoder, decoder, lr, cuda=cuda)
+
+    # Train the VAE
+    if not skip_vae_training:
+        print("Training VAE")
+        print(f"number of epochs: {nb_epochs}")
+        # Clear out old models
+        path = f"{save_dir_vae}_models"
+        if os.path.exists(path):
+            for file in os.listdir(path):
+                os.remove(os.path.join(path, file))
+        vlb_train, vlb_dev = train_VAE(
+            VAE,
+            save_dir_vae,
+            batch_size,
+            nb_epochs,
+            trainset,
+            valset,
+            cuda=cuda,
+            flat_ims=False,
+            train_plot=False,
+            early_stop=early_stop,
+        )
+
+        VAE.load(f"{save_dir_vae}_models/theta_best.dat")
+
+    VAE.load(f"{save_dir_vae}_models/theta_best.dat")
+
+    # Project data into latent space
+    _, _, z_train, x_train, y_train = latent_project_gauss(
+        pnn, VAE, dset=trainset, batch_size=32, cuda=cuda, prob_BNN=False
+    )
+    _, _, z_test, x_test, _ = latent_project_gauss(
+        pnn, VAE, dset=testset, batch_size=32, cuda=cuda, prob_BNN=False
+    )
+
+    z_init_batch = z_test[ind_instances_to_explain]
+    x_init_batch = x_test[ind_instances_to_explain]
+
+    dist = Ln_distance(n=1, dim=(1))
+    x_dim = x_init_batch.reshape(x_init_batch.shape[0], -1).shape[1]
+
+    # We explain aleatoric uncertainty in this work
+    aleatoric_weight = 1
+    epistemic_weight = 0
+    uncertainty_weight = 0
+
+    distance_weight = 1.5 / x_dim
+    prediction_similarity_weight = 0
+    with torch.no_grad():
+        device = next(pnn.parameters()).device  
+        dtype = next(pnn.parameters()).dtype 
+        mu_vec, std_vec = pnn(torch.tensor(x_init_batch).to(device).to(dtype))
+
+    desired_preds = mu_vec.cpu().numpy()
+    if cuda:
+        VAE.model.to("cuda")
+    CLUE_explainer = CLUE(
+        VAE,
+        pnn,
+        x_init_batch,
+        uncertainty_weight=uncertainty_weight,
+        aleatoric_weight=aleatoric_weight,
+        epistemic_weight=epistemic_weight,
+        prior_weight=0,
+        distance_weight=distance_weight,
+        latent_L2_weight=0,
+        prediction_similarity_weight=prediction_similarity_weight,
+        lr=1e-2,
+        desired_preds=None,
+        cond_mask=None,
+        distance_metric=dist,
+        z_init=z_init_batch,
+        norm_MNIST=False,
+        flatten_BNN=False,
+        regression=True,
+        cuda=cuda,
+        prob_BNN=False,
+    )
+
+    (
+        z_vec,
+        x_vec,
+        uncertainty_vec,
+        epistemic_vec,
+        aleatoric_vec,
+        cost_vec,
+        dist_vec,
+    ) = CLUE_explainer.optimise(min_steps=3, max_steps=35, n_early_stop=3)
+
+    importances = []
+    differences = []
+    for Nsample in range(len(ind_instances_to_explain)):
+        difference = x_vec[-1, Nsample, :] - x_init_batch[Nsample]
+        importance = np.abs(difference)
+        importances.append(importance)
+        differences.append(difference)
+    differences = np.array(differences)
+    differences = np.stack(differences, axis=0)
+
+    importances = np.array(importances)
+    importances = np.stack(importances, axis=0)
+    pnn.to("cpu")
+    x_test = x_test[ind_instances_to_explain]
+    mean, uc = pnn(torch.tensor(x_test))
+    index_sorted = np.argsort(uc.detach(), kind="stable")
+    importances_sorted = importances[index_sorted]
+    differences_sorted = differences[index_sorted]
+    instances_to_explain = x_test[index_sorted]
+    if save:
+        if not (os.path.exists(f"{save_dir}/importances")):
+            os.makedirs(f"{save_dir}/importances")
+        np.save(
+            f"{save_dir}/importances/CLUE_importances_{identifier}.npy",
+            {
+                "importances_directed": differences,
+                "feature_importance": importances_sorted,
+                "instances_to_explain": instances_to_explain,
+            },
+        )
+    else:
+        return {
+            "importances_directed": differences_sorted if sort else differences,
+            "feature_importance": importances_sorted if sort else importances,
+            "instances_to_explain": instances_to_explain if sort else x_test,
+        }
+
 def clue_explain(
     pnn,
     x_train,
@@ -409,11 +578,11 @@ def clue_explain(
         x_train,
         y_train,
     ) = latent_project_gauss(
-        pnn, VAE, dset=trainset, batch_size=2048, cuda=cuda, prob_BNN=False
+        pnn, VAE, dset=trainset, batch_size=32, cuda=cuda, prob_BNN=False
     )
 
     te_aleatoric_vec, te_epistemic_vec, z_test, x_test, y_test = latent_project_gauss(
-        pnn, VAE, dset=testset, batch_size=2048, cuda=cuda, prob_BNN=False
+        pnn, VAE, dset=testset, batch_size=32, cuda=cuda, prob_BNN=False
     )
 
     torch.cuda.empty_cache()
@@ -758,15 +927,16 @@ def run_uncertainty_explanation_experiment(
     remake_data=True,
     overwrite_pnn=True,
     beta_gaussian=False,
+    run_id=0,
 ):
-    save_dir = f"results/new_synthetic/"
+    save_dir = f"results/new_synthetic_multirun/"
     if not os.path.exists("results"):
         os.makedirs("results")
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
     identifier = (
-        f"n_{n}_s_{noise_scaler:.2f}_n_test_{n_test}_n_exp_{n_instances_to_explain}"
+        f"n_{n}_s_{noise_scaler:.2f}_n_test_{n_test}_n_exp_{n_instances_to_explain}_run_{run_id}"
     )
 
     if torch.cuda.is_available():
@@ -792,6 +962,7 @@ def run_uncertainty_explanation_experiment(
         noise_scaler=noise_scaler,
         save_dir=save_dir,
         identifier=identifier,
+        random_state=run_id,
     )
     var_names = list(var_names)
     dtype = torch.float32

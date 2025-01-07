@@ -39,8 +39,14 @@ class CLUE(BaseNet):
         # Load models
         self.VAE = VAE
         self.BNN = BNN
-        self.BNN.set_mode_train(train=False)
-        self.VAE.set_mode_train(train=False)
+        try:
+            self.BNN.set_mode_train(train=False)
+        except AttributeError:
+            self.BNN.eval()
+        try:
+            self.VAE.set_mode_train(train=False)
+        except AttributeError:
+            self.VAE.eval()
 
         # Objective function definition
         self.uncertainty_weight = uncertainty_weight
@@ -160,7 +166,10 @@ class CLUE(BaseNet):
                 preds = probs.mean(dim=0)
         else:
             if self.regression:
-                mu, std = self.BNN.predict(to_BNN, grad=True)
+                try:
+                    mu, std = self.BNN.predict(to_BNN, grad=True)
+                except AttributeError:
+                    mu, std = self.BNN(to_BNN)
                 total_uncertainty = std  # squeeze(1)
                 aleatoric_uncertainty = total_uncertainty
                 epistemic_uncertainty = total_uncertainty * 0
@@ -254,16 +263,21 @@ class CLUE(BaseNet):
                 preds,
             )
             # We sum over features and over batch size in order to make dz invariant of batch (used to average over batch size)
-            objective.sum(dim=0).backward()  # backpropagate
+
+            objective = objective.sum(dim=0)
+              # backpropagate
+            objective.mean(dim=0).backward() 
+            # added mean to make it work
+            
 
             self.optimizer.step()
 
             # save vectors
-            uncertainty_vec[step_idx, :] = total_uncertainty.data.cpu().numpy()
-            aleatoric_vec[step_idx, :] = aleatoric_uncertainty.data.cpu().numpy()
-            epistemic_vec[step_idx, :] = epistemic_uncertainty.data.cpu().numpy()
-            dist_vec[step_idx, :] = w_dist.data.cpu().numpy()
-            cost_vec[step_idx, :] = objective.data.cpu().numpy()
+            uncertainty_vec[step_idx, :] = total_uncertainty.data.cpu().numpy().squeeze()
+            aleatoric_vec[step_idx, :] = aleatoric_uncertainty.data.cpu().numpy().squeeze()
+            epistemic_vec[step_idx, :] = epistemic_uncertainty.data.cpu().numpy().squeeze()
+            dist_vec[step_idx, :] = w_dist.data.cpu().numpy().squeeze()
+            cost_vec[step_idx, :] = objective.data.cpu().numpy().squeeze()
             x_vec.append(
                 x.data
             )  # we dont convert to numpy yet because we need x0 for L1
