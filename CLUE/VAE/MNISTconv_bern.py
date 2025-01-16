@@ -152,11 +152,31 @@ class MNISTplusconv_VAE_bern_net(BaseNet):
                 z.requires_grad = True
         else:
             z, = to_variable(var=(z,), volatile=True, cuda=self.cuda)
-        out = self.model.decode(z)
+        out = batched_decode(self.model, z, 4)
         if grad:
             return torch.sigmoid(out)
         else:
             return torch.sigmoid(out.data)
+        
+def batched_decode(model, z, batch_size=64):
+    """
+    Decodes `z` in smaller batches to save memory.
+
+    Parameters:
+        model (torch.nn.Module): The model with a `decode` method.
+        z (torch.Tensor): The latent vectors to decode.
+        batch_size (int): The batch size for decoding.
+
+    Returns:
+        torch.Tensor: The decoded output.
+    """
+    decoded_outputs = []
+    for i in range(0, z.size(0), batch_size):
+        batch_z = z[i:i + batch_size]  # Slice the latent vectors for this batch
+        batch_out = model.decode(batch_z)  # Decode the batch
+        decoded_outputs.append(batch_out)  # Append the batch output
+
+    return torch.cat(decoded_outputs, dim=0)  # Concatenate all batch outputs
 
 # import these in order to use a more general naming scheme for doodle
 conv_VAE_bern = convMNIST_VAE_bern
