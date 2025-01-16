@@ -351,6 +351,7 @@ def clue_explain_images(
     save=False,
     sort=True,
     skip_vae_training=False,
+    cpu=False,
 ):
     if save_dir and not os.path.exists(f"{save_dir}/models/"):
         os.makedirs(f"{save_dir}/models/")
@@ -365,7 +366,7 @@ def clue_explain_images(
     lr = 7e-4
     early_stop = 5
 
-    cuda = torch.cuda.is_available()
+    cuda = torch.cuda.is_available() and not cpu
     if cuda:
         pnn.to("cuda")
     mps = torch.backends.mps.is_available()
@@ -403,13 +404,16 @@ def clue_explain_images(
         VAE.load(f"{save_dir_vae}_models/theta_best.dat")
 
     VAE.load(f"{save_dir_vae}_models/theta_best.dat")
-
+    if cuda:
+        VAE.model.to("cuda")
+    else:
+        VAE.model.to("cpu")
     # Project data into latent space
     _, _, z_train, x_train, y_train = latent_project_gauss(
-        pnn, VAE, dset=trainset, batch_size=32, cuda=cuda, prob_BNN=False
+        pnn, VAE, dset=trainset, batch_size=8, cuda=cuda, prob_BNN=False
     )
     _, _, z_test, x_test, _ = latent_project_gauss(
-        pnn, VAE, dset=testset, batch_size=32, cuda=cuda, prob_BNN=False
+        pnn, VAE, dset=testset, batch_size=8, cuda=cuda, prob_BNN=False
     )
 
     z_init_batch = z_test[ind_instances_to_explain]
@@ -425,11 +429,31 @@ def clue_explain_images(
 
     distance_weight = 1.5 / x_dim
     prediction_similarity_weight = 0
-    with torch.no_grad():
-        device = next(pnn.parameters()).device  
-        dtype = next(pnn.parameters()).dtype 
-        mu_vec, std_vec = pnn(torch.tensor(x_init_batch).to(device).to(dtype))
+    batch_size = 64  # Adjust based on your memory constraints
+    device = next(pnn.parameters()).device  
+    dtype = next(pnn.parameters()).dtype
 
+    mu_vec_list = []
+    std_vec_list = []
+
+    with torch.no_grad():
+        for i in range(0, len(x_init_batch), batch_size):
+            # Extract the batch
+            batch = x_init_batch[i:i + batch_size]
+            
+            # Move batch to the appropriate device and dtype
+            batch = torch.tensor(batch).to(device).to(dtype)
+            
+            # Forward pass through the model
+            mu_batch, std_batch = pnn(batch)
+            
+            # Store the results
+            mu_vec_list.append(mu_batch)
+            std_vec_list.append(std_batch)
+
+    # Concatenate results from all batches
+    mu_vec = torch.cat(mu_vec_list, dim=0)
+    std_vec = torch.cat(std_vec_list, dim=0)
     desired_preds = mu_vec.cpu().numpy()
     if cuda:
         VAE.model.to("cuda")
