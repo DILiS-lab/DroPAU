@@ -56,15 +56,12 @@ def latent_project_gauss(BNN, VAE, dset, batch_size=1024, cuda=True, prob_BNN=Tr
         loader = torch.utils.data.DataLoader(
             dset, batch_size=batch_size, shuffle=False, pin_memory=False, num_workers=3
         )
-        
     z_train = []
     y_train = []
     x_train = []
     tr_aleatoric_vec = []
     tr_epistemic_vec = []
-    print()
-    print()
-    print("Starting latent projection")
+
     for j, (x, y_l, *_) in enumerate(loader):
         zz = VAE.recongnition(x.to(torch.float32)).loc.data.cpu().numpy()
         # Note that naming is wrong and this is actually std instead of entropy
@@ -91,8 +88,6 @@ def latent_project_gauss(BNN, VAE, dset, batch_size=1024, cuda=True, prob_BNN=Tr
         z_train.append(zz)
         y_train.append(y_l.cpu().numpy())
         x_train.append(x.cpu().numpy())
-        if j % 200 == 0:
-            print(f"Batch {j+1}/{len(loader)}", flush=True)
 
     tr_aleatoric_vec = torch.cat(tr_aleatoric_vec).cpu().numpy()
     tr_epistemic_vec = torch.cat(tr_epistemic_vec).cpu().numpy()

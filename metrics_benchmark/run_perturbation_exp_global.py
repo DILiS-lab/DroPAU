@@ -11,7 +11,6 @@ from dataset_utils import (
 )
 from global_perturbation import perturbation_experiment
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 
 
 @singledispatch
@@ -47,7 +46,7 @@ def write_to_json(object, filename):
 
 def main():
     torch.set_float32_matmul_precision("medium")
-    datasets = ["synthetic_mixed_5", "synthetic" ] #  "red_wine", "ailerons", "lsat"]
+    datasets = ["synthetic", "synthetic_mixed_5"] #["synthetic_mixed_5", "synthetic", "red_wine", "ailerons", "lsat"]
     methods = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
     if not os.path.exists("results/global_perturbation"):
         os.makedirs("results/global_perturbation")
@@ -59,10 +58,9 @@ def main():
                     70,
                     5,
                     0 if dataset == "synthetic" else int(dataset.split("_")[2]),
-                    random_state=run_id,
                     n_samples_train=25000,  # 32000,
                     n_samples_val=15000,  # 8000,
-                    n_samples_test=1500
+                    n_samples_test=1500,
                 )
 
                 out_perturb = perturbation_experiment(
@@ -81,32 +79,9 @@ def main():
                         data = get_ailerons_dataset()
                     elif dataset == "lsat":
                         data = get_LSAT_dataset()
-                    
-                    # we shuffle train and test data and then split them again to get a new train-test split for bootstrapping
-                    # Combine train and test data
-                    x_combined = np.concatenate([data["x_train"], data["x_test"]], axis=0)
-                    y_combined = np.concatenate([data["y_train"], data["y_test"]], axis=0)
 
-                    # Shuffle combined data
-                    indices = np.arange(len(x_combined))
-                    np.random.shuffle(indices)
-                    x_combined = x_combined[indices]
-                    y_combined = y_combined[indices]
-
-                    # Compute original train-test split ratio
-                    original_train_size = len(data["x_train"])
-                    original_test_size = len(data["x_test"])
-                    train_ratio = original_train_size / (original_train_size + original_test_size)
-
-                    # Split back into train and test sets
-                    data["x_train"], data["x_test"], data["y_train"], data["y_test"] = train_test_split(
-                        x_combined, y_combined, train_size=train_ratio, random_state=42)
-                    
-                    # Repeat train data if needed
                     data["x_train"] = np.repeat(data["x_train"], repeat, axis=0)
                     data["y_train"] = np.repeat(data["y_train"], repeat, axis=0)
-                    
-
 
                     data = standardize_output(data)
                     out_perturb = perturbation_experiment(
