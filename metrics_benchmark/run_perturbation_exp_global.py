@@ -47,7 +47,7 @@ def write_to_json(object, filename):
 
 def main():
     torch.set_float32_matmul_precision("medium")
-    datasets = ["ailerons", "red_wine"] #["synthetic_mixed_5", "synthetic", "red_wine", "ailerons", "lsat"]
+    datasets = ["synthetic_mixed_5", "synthetic" ] #  "red_wine", "ailerons", "lsat"]
     methods = ["varx_ig", "varx_lrp", "varx", "clue", "infoshap"]
     if not os.path.exists("results/global_perturbation"):
         os.makedirs("results/global_perturbation")
@@ -59,9 +59,10 @@ def main():
                     70,
                     5,
                     0 if dataset == "synthetic" else int(dataset.split("_")[2]),
+                    random_state=run_id,
                     n_samples_train=25000,  # 32000,
                     n_samples_val=15000,  # 8000,
-                    n_samples_test=1500,
+                    n_samples_test=1500
                 )
 
                 out_perturb = perturbation_experiment(

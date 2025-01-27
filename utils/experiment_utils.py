@@ -824,18 +824,22 @@ def varx_ig_explain(
     save_dir=None,
     save=False,
     sort=True,
+    mnist_plus=False, 
 ):
     from captum.attr import IntegratedGradients
-
-    ig = IntegratedGradients(pnn.model)
+    if not mnist_plus:
+        ig = IntegratedGradients(pnn.model)
+    else:
+        ig = IntegratedGradients(pnn)
 
     instances_to_explain = torch.tensor(instances_to_explain, dtype=torch.float32).to(
         "cuda"
     )
-
-    instances_to_explain_sorted = instances_to_explain[
-        torch.argsort(pnn.predict_uncertainty_tensor(instances_to_explain), stable=True)
-    ]
+    instances_to_explain_sorted = None
+    if sort:
+        instances_to_explain_sorted = instances_to_explain[
+            torch.argsort(pnn.predict_uncertainty_tensor(instances_to_explain), stable=True)
+        ]
 
     attribution, _ = ig.attribute(
         instances_to_explain_sorted.to("cuda")
