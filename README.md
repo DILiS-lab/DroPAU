@@ -72,12 +72,6 @@ The script creates (directed and undirected) feature importances as results. The
 a) `shap_summaries.ipynb` for Figure 2 of the paper.
 b) `plotting/plotting.R` for Figure 3 of the paper.
 
-### Example 
-To understand whether the uncertainty explainers maintain their performance in scenarios with mixed features, we demonstrate the analysis of the global relevance rank accuracy (GRA) and global relevance mass accuracy (GMA) of the synthetic dataset where a subset of features influence both the mean and the variance of the target distribution.  We expect the uncertainty explainers to detect noise features and mixed features as relevant drivers of uncertainty. Figure 1 depicts the results of this analysis. For this mixed setting, VFA flavors reliably identify features relevant to uncertainty and outperform InfoSHAP and CLUE.
-
-![](example_images/importances_syn_mixed_experiment_v5.png)
-
-*Figure 1: Identifying sources of uncertainty on a synthetic dataset with 70 mean and five noise features and additionally five features that influence the target's mean and variance simultaneously. A, B: Explanations of 200 random instances of the top 10 most important features (sorted by average absolute estimated Shapley values) for uncertainty (A) and mean (B) predictions using VFA-SHAP. VFA-SHAP identifies all noise features driving the model's aleatoric uncertainty. Explaining the mean output offers complementary information but disregards noise features. C: Top 15 global importance features with GRA and GMA for each uncertainty explainer (grey: features that influence the target mean, red: features that influence the noise variance, blue: features that influence the target mean and the noise variance). a-e: From the test set of 1,500 samples, we explain the 200 instances with the highest predicted uncertainty. VFA flavors (a, b, c) and CLUE (e) correctly assign high importance to the ground truth noise features (red) and mixed features (blue). f-j: For 200 random instances, VFA correctly identifies the noise features, while CLUE is unreliable. k-o: VFA also can attribute (un-)certainty for the 200 instances with the lowest uncertainty predictions, while CLUE performance deteriorates. InfoSHAP (d, i, n) does not detect any ground truth noise features.*
 
 
 ## 1.3 Localization, Robustness, Faithfulness
