@@ -92,15 +92,12 @@ if f"{is_filename}.ckpt" not in os.listdir("./infoshap_checkpoints"):
 
     switch_epoch = 36
 
-    # Trainer
     is_trainer = pl.Trainer(
         max_epochs=35,
         callbacks=[is_checkpoint_callback, is_early_stopping_callback],
         accelerator=device,
         devices=1,
     )
-
-    # Training
 
     is_l_model = SwitchableDoublePathCNNModule(
         switch_epoch=switch_epoch, lr=0.001, weight_decay=1e-3, clip_value=1.0
@@ -122,7 +119,7 @@ background = torch.cat([infoshap_val_dataset[i][0].unsqueeze(0) for i in samples
 localization = Localization()
 is_model.eval()
 
-for i in tqdm(range(len(infoshap_test_dataset))): 
+for i in tqdm(range(len(infoshap_test_dataset))):
     image, label, uc, mean_mask, var_mask = infoshap_test_dataset[
         i
     ]  # Get a sample from the dataset

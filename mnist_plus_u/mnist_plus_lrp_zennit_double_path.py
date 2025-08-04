@@ -59,11 +59,10 @@ def get_lrp_explanation(model, img, name_map, exp_target="mean", save_image=None
         name_map=name_map,
     )
 
-    # choose a target for the attribution by multiplying the output with the identity matrix
     target_base = model(img)
     # print(model(img), model(img), model(img), model(img))
     # print(target_base)
-    # appying ReLU if the target is variance
+
     target = target_base if exp_target == "mean" else target_base.exp()
     # target = torch.ones_like(target_base)
 
@@ -99,7 +98,7 @@ localization = Localization()
 
 mean_model.eval()
 var_model.eval()
-for i in tqdm(range(len(test_dataset))):  
+for i in tqdm(range(len(test_dataset))):
     image, label, uc, mean_mask, var_mask = test_dataset[
         i
     ]  # Get a sample from the dataset
