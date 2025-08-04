@@ -28,17 +28,14 @@ def combine_mnist_images_with_masks(
         np.ndarray: Ground truth mask for the uncertainty value image.
     """
     # Create a blank canvas
-    canvas = Image.new("L", canvas_size, color=0)  # Black background
+    canvas = Image.new("L", canvas_size, color=0)
 
-    # Convert images to numpy arrays
     mean_image_np = np.array(mean_image, dtype=np.uint8)
     uncertainty_image_np = np.array(uncertainty_image, dtype=np.uint8)
 
     # Scale mean_image to white and uncertainty_image to dark gray
-    mean_image_scaled = (mean_image_np > 0) * 255  # Keep only non-black pixels
-    uncertainty_image_scaled = (
-        uncertainty_image_np > 0
-    ) * 150  # Keep only non-black pixels
+    mean_image_scaled = (mean_image_np > 0) * 255
+    uncertainty_image_scaled = (uncertainty_image_np > 0) * 150
 
     # Define the four corners for placement
     corners = [
@@ -51,25 +48,23 @@ def combine_mnist_images_with_masks(
     # Randomly select two distinct corners
     corner1, corner2 = random.sample(corners, 2)
 
-    # Create binary masks for the two digits
+    # Create binary masks
     mask_mean = np.zeros(canvas_size, dtype=np.uint8)
     mask_uncertainty = np.zeros(canvas_size, dtype=np.uint8)
 
-    # Place mean image and update its mask
+    # Place mean image and update mask
     canvas_np = np.array(canvas, dtype=np.uint8)
     mean_region = canvas_np[corner1[1] : corner1[1] + 28, corner1[0] : corner1[0] + 28]
-    mean_region[:] = np.maximum(mean_region, mean_image_scaled)  # Merge with canvas
+    mean_region[:] = np.maximum(mean_region, mean_image_scaled)
     mask_mean[corner1[1] : corner1[1] + 28, corner1[0] : corner1[0] + 28] = (
         mean_image_np > 0
     )
 
-    # Place uncertainty image and update its mask
+    # Place uncertainty image and update mask
     uncertainty_region = canvas_np[
         corner2[1] : corner2[1] + 28, corner2[0] : corner2[0] + 28
     ]
-    uncertainty_region[:] = np.maximum(
-        uncertainty_region, uncertainty_image_scaled
-    )  # Merge with canvas
+    uncertainty_region[:] = np.maximum(uncertainty_region, uncertainty_image_scaled)
     mask_uncertainty[corner2[1] : corner2[1] + 28, corner2[0] : corner2[0] + 28] = (
         uncertainty_image_np > 0
     )
@@ -106,11 +101,10 @@ def create_combined_mnist_dataset_with_masks(
 
     random.seed(seed)
 
-    # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(os.path.join(output_dir, "masks"), exist_ok=True)
 
-    # Load MNIST dataset
+    # Load MNIST
     mnist_train = datasets.MNIST(root="./data", train=True, download=True)
     images = mnist_train.data  # Access raw images
     labels = mnist_train.targets  # Access raw labels
@@ -133,7 +127,7 @@ def create_combined_mnist_dataset_with_masks(
             mean_image, uncertainty_image, canvas_size
         )
 
-        # Generate a unique hash for this combined image
+        # Generate a unique hash
         image_hash = get_image_hash(combined_image)
 
         # Skip if this combined image has already been created
