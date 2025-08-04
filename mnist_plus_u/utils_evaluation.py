@@ -25,7 +25,7 @@ def visualize_heatmap(image, mean_heatmap, var_heatmap, method, alpha=0.5):
     # Image plot
     axes[0].imshow(image_np, cmap="gray")
     axes[0].set_title("Input Image")
-    axes[0].axis("off")  
+    axes[0].axis("off")
 
     # Mean heatmap plot
     axes[1].imshow(
@@ -148,7 +148,9 @@ class Localization:
             metric_func(var_heatmap, var_mask)
         )
 
-    def add_sample(self, mean_heatmap, mean_mask, var_heatmap, var_mask, gt_uncertainty):
+    def add_sample(
+        self, mean_heatmap, mean_mask, var_heatmap, var_mask, gt_uncertainty
+    ):
         self.gt_uncertainties.append(gt_uncertainty)
         self._add_metrics(
             mean_heatmap,
@@ -176,13 +178,18 @@ class Localization:
         )
 
     def save(self, file_name):
-        with open(f'{file_name}.json', 'w', encoding='utf-8') as f:
-            json.dump({
-                "gt_uncertainty": [val.item() for val in self.gt_uncertainties],
-                "iou_scores": self.iou_scores,
-                "mass_accuracies": self.mass_accuracies,
-                "rank_accuracies": self.rank_accuracies
-            }, f, ensure_ascii=False, indent=4)
+        with open(f"{file_name}.json", "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "gt_uncertainty": [val.item() for val in self.gt_uncertainties],
+                    "iou_scores": self.iou_scores,
+                    "mass_accuracies": self.mass_accuracies,
+                    "rank_accuracies": self.rank_accuracies,
+                },
+                f,
+                ensure_ascii=False,
+                indent=4,
+            )
         pass
 
     def calculate_acc_matrices(self):
@@ -282,37 +289,35 @@ def plot_localization(localization_result, save_path=None):
 def extend_mask(mask, k):
     """
     Extends a binary mask (torch tensor) by k pixels in all directions.
-    
+
     Parameters:
         mask (torch.Tensor): Binary mask with 1s and 0s (shape: H x W or N x H x W).
         k (int): Number of pixels to extend the mask by.
-        
+
     Returns:
         torch.Tensor: Extended binary mask.
     """
     # Ensure the mask is a binary tensor
     mask = (mask > 0).float()
-    
-    # Create a kernel of size (2k+1, 2k+1) with all ones
+
+    # Create a kernel of size (2k+1, 2k+1)
     kernel_size = 2 * k + 1
     kernel = torch.ones((1, 1, kernel_size, kernel_size), device=mask.device)
-    
-    # Add batch and channel dimensions if missing
+
     if mask.ndim == 2:  # H x W
         mask = mask.unsqueeze(0).unsqueeze(0)  # Convert to N x C x H x W
     elif mask.ndim == 3:  # N x H x W
         mask = mask.unsqueeze(1)  # Convert to N x C x H x W
-    
+
     # Perform 2D convolution to dilate the mask
     extended_mask = torch.nn.functional.conv2d(mask, kernel, padding=k)
-    
+
     # Threshold the result to maintain binary output
     extended_mask = (extended_mask > 0).float()
-    
-    # Remove extra dimensions if they were added
+
     if extended_mask.shape[1] == 1:
         extended_mask = extended_mask.squeeze(1)
     if extended_mask.shape[0] == 1:
         extended_mask = extended_mask.squeeze(0)
-    
+
     return extended_mask

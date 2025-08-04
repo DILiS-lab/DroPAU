@@ -37,7 +37,6 @@ class GradCAM:
         self.gradients = None
         self.activations = None
 
-        # Register hooks
         self.target_layer.register_forward_hook(self._save_activations)
         self.target_layer.register_backward_hook(self._save_gradients)
 
@@ -84,7 +83,6 @@ for i in [1520]:  # tqdm(range(len(test_dataset))):  # Loop over 10 samples
     ]  # Get a sample from the dataset
     image = image.unsqueeze(0)  # Add batch dimension
 
-    # Forward pass
     # print(model(image.to(device)).unsqueeze(0).shape)
     mean_output = mean_model(image.to(device))
     log_var_output = var_model(image.to(device))
@@ -112,7 +110,6 @@ for i in [1520]:  # tqdm(range(len(test_dataset))):  # Loop over 10 samples
     del mean_output
     del log_var_output
     torch.cuda.empty_cache()
-
 
 
 localization.save(file_name="mnist_plus_gradcam_double_path_extended2")

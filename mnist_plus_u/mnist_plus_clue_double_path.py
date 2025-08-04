@@ -16,14 +16,15 @@ from torchvision import datasets, transforms
 from .utils_model import SwitchableCNNModule
 from .utils_dataset import CombinedMNISTDataset
 import sys
+
 sys.path.append("..")
 from utils.experiment_utils import clue_explain_images
 from .utils_evaluation import Localization
 
 output_dir = "./combined_mnist_dataset"
-num_samples = 500000  # Number of combined images to create
+num_samples = 500000
 
-# Create PyTorch Dataset
+
 transform = transforms.Compose(
     [transforms.ToTensor()]
 )  # , v2.RandomRotation(degrees=15)])

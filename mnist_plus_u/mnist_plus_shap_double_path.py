@@ -30,7 +30,6 @@ mean_model = l_model.mean_model.to(device)
 var_model = l_model.variance_model.to(device)
 
 
-# Define a PyTorch model wrapper for SHAP
 class SHAPMeanVarianceModel(torch.nn.Module):
     def __init__(self, mean_model, var_model):
         super(SHAPMeanVarianceModel, self).__init__()
@@ -57,7 +56,7 @@ mean_model.eval()
 var_model.eval()
 shap_model.eval()
 
-for i in tqdm(range(len(test_dataset))):  
+for i in tqdm(range(len(test_dataset))):
     image, label, uc, mean_mask, var_mask = test_dataset[
         i
     ]  # Get a sample from the dataset

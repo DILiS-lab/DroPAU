@@ -214,7 +214,6 @@ class SwitchableDoublePathCNNModule(pl.LightningModule):
         log_vars = self.variance_model(images)
         variances = torch.exp(log_vars)
 
-        # Determine the loss function
         current_epoch = self.current_epoch
         if current_epoch < self.switch_epoch:
             loss_function = nn.MSELoss()
@@ -223,10 +222,8 @@ class SwitchableDoublePathCNNModule(pl.LightningModule):
             loss_function = nn.GaussianNLLLoss()
             loss = loss_function(means, labels, variances)
 
-        # Log training metrics
         self.log("train_loss", loss, on_epoch=True, on_step=False, prog_bar=True)
 
-        # Log Gaussian NLL as a metric regardless of the loss used
         # variances = torch.exp(log_vars)
         gaussian_nll = nn.GaussianNLLLoss()(means, labels, variances)
         self.log(

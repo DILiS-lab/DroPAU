@@ -15,7 +15,7 @@ device = (
 torch.set_float32_matmul_precision("medium")
 
 output_dir = "./combined_mnist_dataset"
-num_samples = 500000  # Number of combined images to create
+num_samples = 500000
 
 train_dataset, val_dataset, test_dataset = get_loaders(
     output_dir, num_samples, get_sets="splits"
@@ -33,11 +33,9 @@ localization = Localization()
 mean_model.eval()
 var_model.eval()
 
-for i in tqdm(range(len(test_dataset))):  
-    image, label, uc, mean_mask, var_mask = test_dataset[
-        i
-    ]  # Get a sample from the dataset
-    image = image.unsqueeze(0).to(device)  # Add batch dimension
+for i in tqdm(range(len(test_dataset))):
+    image, label, uc, mean_mask, var_mask = test_dataset[i]
+    image = image.unsqueeze(0).to(device)
     ig_mean = IntegratedGradients(mean_model)
     ig_var = IntegratedGradients(var_model)
 

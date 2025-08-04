@@ -87,10 +87,8 @@ def get_image_hash(image):
     Returns:
         str: A unique hash for the combined image.
     """
-    # Convert image to bytes
     image_bytes = image.tobytes()
 
-    # Generate a hash for the image bytes
     return hashlib.md5(image_bytes).hexdigest()
 
 
@@ -118,7 +116,7 @@ def create_combined_mnist_dataset_with_masks(
     labels = mnist_train.targets  # Access raw labels
 
     combined_data = []
-    generated_hashes = set()  # To track unique combined images based on hash
+    generated_hashes = set()
 
     # Generate combined images
     while len(combined_data) < num_samples:
@@ -127,7 +125,6 @@ def create_combined_mnist_dataset_with_masks(
         mean_image, mean_label = images[idx1], labels[idx1]
         uncertainty_image, uncertainty_label = images[idx2], labels[idx2]
 
-        # Convert images to PIL format
         mean_image = Image.fromarray(mean_image.numpy(), mode="L")
         uncertainty_image = Image.fromarray(uncertainty_image.numpy(), mode="L")
 
@@ -143,23 +140,20 @@ def create_combined_mnist_dataset_with_masks(
         if image_hash not in generated_hashes:
             generated_hashes.add(image_hash)
 
-            # Save the combined image
             filename_image = f"combined_{len(combined_data):06d}.png"
             combined_image.save(os.path.join(output_dir, filename_image))
 
-            # Save the ground truth masks
             filename_mask_mean = f"combined_{len(combined_data):06d}_mask_mean.png"
             filename_mask_uncertainty = (
                 f"combined_{len(combined_data):06d}_mask_uncertainty.png"
             )
             Image.fromarray(mask_mean * 255).save(
                 os.path.join(output_dir, "masks", filename_mask_mean)
-            )  # Scale mask to [0, 255]
+            )
             Image.fromarray(mask_uncertainty * 255).save(
                 os.path.join(output_dir, "masks", filename_mask_uncertainty)
-            )  # Scale mask to [0, 255]
+            )
 
-            # Store the data
             combined_data.append(
                 {
                     "filename": filename_image,
@@ -170,7 +164,6 @@ def create_combined_mnist_dataset_with_masks(
                 }
             )
         else:
-            # If the image hash has been generated before, skip it
             continue
 
     df = pd.DataFrame(combined_data)
@@ -198,7 +191,6 @@ class CombinedMNISTDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        # Load the image
         img_path = os.path.join(self.data_dir, self.data.loc[idx, "filename"])
         image = Image.open(img_path).convert("L")
 
@@ -211,13 +203,11 @@ class CombinedMNISTDataset(Dataset):
         )
         uncertainty_mask = Image.open(uncertainty_mask_path).convert("L")
 
-        # Apply transform if specified
         if self.transform:
             image = self.transform(image)
             mean_mask = self.transform(mean_mask)
             uncertainty_mask = self.transform(uncertainty_mask)
 
-        # Load the labels
         mean_label = self.data.loc[idx, "mean_label"]
         uncertainty_label = self.data.loc[idx, "uncertainty_label"]
 
@@ -252,7 +242,6 @@ class CombinedMNISTDatasetInfoShap(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        # Load the image
         img_path = os.path.join(self.data_dir, self.data.loc[idx, "filename"])
         image = Image.open(img_path).convert("L")
 
@@ -265,13 +254,11 @@ class CombinedMNISTDatasetInfoShap(Dataset):
         )
         uncertainty_mask = Image.open(uncertainty_mask_path).convert("L")
 
-        # Apply transform if specified
         if self.transform:
             image = self.transform(image)
             mean_mask = self.transform(mean_mask)
             uncertainty_mask = self.transform(uncertainty_mask)
 
-        # Load the labels
         label = self.data.loc[idx, "new_label"]
         uncertainty_label = self.data.loc[idx, "uncertainty_label"]
 
@@ -285,9 +272,7 @@ class CombinedMNISTDatasetInfoShap(Dataset):
 
 
 def get_loaders(output_dir, num_samples, get_sets=None):
-    transform = transforms.Compose(
-        [transforms.ToTensor()]
-    ) 
+    transform = transforms.Compose([transforms.ToTensor()])
     dataset = CombinedMNISTDataset(data_dir=output_dir, transform=transform)
 
     if get_sets == "full":
