@@ -106,7 +106,6 @@ def create_combined_mnist_dataset_with_masks(
         canvas_size (tuple): Size of the output canvas (height, width).
     """
 
-    # Set random seed for reproducibility
     random.seed(seed)
 
     # Ensure the output directory exists
@@ -174,7 +173,6 @@ def create_combined_mnist_dataset_with_masks(
             # If the image hash has been generated before, skip it
             continue
 
-    # Save the data to a CSV file using pandas
     df = pd.DataFrame(combined_data)
     df.to_csv(os.path.join(output_dir, "labels.csv"), index=False)
 
@@ -193,7 +191,6 @@ class CombinedMNISTDataset(Dataset):
         self.data_dir = data_dir
         self.transform = transform
 
-        # Load the labels using pandas
         labels_path = os.path.join(data_dir, lable_file)
         self.data = pd.read_csv(labels_path)
 
@@ -249,7 +246,6 @@ class CombinedMNISTDatasetInfoShap(Dataset):
         self.data_dir = data_dir
         self.transform = transform
 
-        # Load the labels using pandas
         self.data = metadata
 
     def __len__(self):
@@ -289,10 +285,9 @@ class CombinedMNISTDatasetInfoShap(Dataset):
 
 
 def get_loaders(output_dir, num_samples, get_sets=None):
-    # Create PyTorch Dataset
     transform = transforms.Compose(
         [transforms.ToTensor()]
-    )  # , v2.RandomRotation(degrees=15)])
+    ) 
     dataset = CombinedMNISTDataset(data_dir=output_dir, transform=transform)
 
     if get_sets == "full":
