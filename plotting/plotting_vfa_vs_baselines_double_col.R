@@ -3,6 +3,7 @@ library(tidyverse)
 library(ggplot2)
 library(cowplot)
 library(magick)
+library(ggpattern)
 
 theme_set(theme_bw(base_size = 26))
 
@@ -24,9 +25,20 @@ process_df <- function(df){
 }
 
 plot_exp <- function(df, rank_acc, mass_acc, title, y_side="left", x_side="bottom"){
-  return(ggplot(df, aes(x=feature_importance, y=reorder(feature_name, feature_importance), fill=noise_feature)) +
+  return(ggplot(df, aes(x=feature_importance, y=reorder(feature_name, feature_importance), fill=noise_feature, pattern=noise_feature)) +
            ggtitle(title) +
-           geom_bar(stat = "identity", width = 0.6) +
+           geom_bar_pattern(stat = "identity",
+                            pattern_fill = "#444444",
+                            pattern_angle = 60,
+                            pattern_density = 0.4,
+                            pattern_size = 0.2,
+                            pattern_spacing = 0.02,
+                            pattern_key_scale_factor = 0.5,
+                            pattern_aspect_ratio = 1,
+                            pattern_shape = "tile",
+                            pattern_colour = NA,
+                            width = 0.6) +
+           scale_pattern_manual(values = c("Noise feature" = "none", "Mean feature" = "stripe")) +
            scale_y_discrete(position = y_side) + 
            scale_x_continuous(position = x_side) + 
            scale_fill_manual(values= colors) +
@@ -44,6 +56,7 @@ plot_exp <- function(df, rank_acc, mass_acc, title, y_side="left", x_side="botto
              alpha=0.9,
            ) +
            theme(
+             rect = element_rect(fill = "transparent"),
              # text = element_text(family="Arial"),
              plot.title = element_text(size=12, hjust = 0.5, vjust = -4),
              axis.title.y = element_text(size=12),
@@ -139,37 +152,14 @@ grid <- plot_grid(p_varxig_high, p_varxig_random, p_varxig_low,
                   ncol=3, 
                   labels = c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"), 
                   label_y = c(0.85, 0.85, 0.85, 1.075, 1.075, 1.075, 1.075, 1.075, 1.075, 1.075, 1.075, 1.075, 1.075, 1.075, 1.075),
-                  label_x = c(0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0, 0.03, 0.03),
+                  label_x = c(0.03, 0.03, 0.03, 0.03, 0.03, 0.08, 0.03, 0.03, 0.08, 0.08, 0.03, 0.08, 0, 0.03, 0.03),
                   label_size = 16,
-                  rel_heights = c(1.27, 1, 1, 1, 1),
+                  rel_heights = c(1.375, 1, 1, 1, 1),
                   rel_widths = c(1, 1, 1))
 
 
 (vfa_vs_baselines <- plot_grid(legend, grid, nrow=2, rel_heights = c(0.05, 1)) +
-  theme(plot.margin = unit(c(-1.75, 0.05, 0, -0.25), "cm")))
+    theme(plot.margin = unit(c(-1.25, 0.05, 0, -0.25), "cm")))
 
 
-# shap.1 = ggdraw() +
-#   draw_image(magick::image_read_pdf(paste0(path, "variance_output.pdf"), density = 600)) +
-#   theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
-# shap.2 = ggdraw() +
-#   draw_image(magick::image_read_pdf(paste0(path, "mean_output.pdf"), density = 600)) +
-#   theme(plot.margin = unit(c(0, 0, 0, 0), "cm"))
-# 
-# left <- plot_grid(shap.1, shap.2, ncol=1,  
-#           labels = c("A", "B"), 
-#           label_size = 26,
-#           rel_heights = c(1, 1.1),
-#           label_x = c(-0.04, -0.04))
-# 
-# 
-# (final <- plot_grid(left, vfa_vs_baselines,
-#           ncol=2,
-#           label_size = 26,
-#           labels = c("", "C"),
-#           label_x = c(0, -0.01),
-#           rel_widths = c(0.25, 1)))
-
-
-# ggsave(paste0(experiment, "_experiment_v10.pdf"), final, width=12, height=4.75, device=cairo_pdf)
-  
+ggsave(paste0(experiment, "_experiment_v10_double_col_fixed.pdf"), vfa_vs_baselines, width=6, height=7.25, device=cairo_pdf)

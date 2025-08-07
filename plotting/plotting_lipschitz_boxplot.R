@@ -31,23 +31,24 @@ lip_combined <- process_lipschitz(read_csv("data/lipschitz/red_wine_out_lipschit
 
 
 (lipschitz <- ggplot(lip_combined, aes(x=dataset, y=value, fill=method, color=method)) +
-  geom_boxplot(alpha=0.5) +
-  scale_y_continuous(trans = "log10") +
-  ylab("Lipshitz Estimate") +
-  xlab("Dataset") + 
-  guides(fill = guide_legend(ncol= 5, title = "Method"), color = guide_legend(ncol = 5, title = "Method")) +
-  scale_fill_manual(values=c("#88CCEE", "#CC6677", "#44AA99", "#DDCC77", "#882255")) +
-  scale_color_manual(values=c("#88CCEE", "#CC6677", "#44AA99", "#DDCC77", "#882255")) +
-  theme_bw() +
-  theme(
-    legend.position = "top",
-    legend.text= element_text(size=14), 
-    legend.title = element_blank(),
-    legend.box.margin=margin(0,0,0,-5),
-    axis.text.x = element_text(size=14),
-    axis.title = element_text(size=16),
-    plot.margin = unit(c(0.05, 0.05, 0, 0.05), "cm")))
+    geom_boxplot(alpha=0.5) +
+    scale_y_continuous(trans = "log10") +
+    ylab("Lipschitz Estimate") +
+    xlab("Dataset") + 
+    guides(fill = guide_legend(ncol= 3, title = "Method"), color = guide_legend(ncol = 5, title = "Method")) +
+    scale_fill_manual(values=c("#88CCEE", "#CC6677", "#44AA99", "#DDCC77", "#882255")) +
+    scale_color_manual(values=c("#88CCEE", "#CC6677", "#44AA99", "#DDCC77", "#882255")) +
+    theme_bw() +
+    theme(
+      legend.position = "top",
+      legend.text= element_text(size=7), 
+      legend.title = element_blank(),
+      legend.key.size = unit(0.5,"cm"),
+      legend.box.margin=margin(0,0,-10,-5),
+      axis.text = element_text(size=7),
+      axis.title = element_text(size=10),
+      plot.margin = unit(c(0.05, 0.05, 0, 0.05), "cm")))
 
 
-ggsave("Lipschitz_robustness_v7.pdf", lipschitz, width=10, height=3.75, device=cairo_pdf)
+ggsave("Lipschitz_robustness_v9_new_fixed.pdf", lipschitz, width=3.5, height=2.5, units="in", device=cairo_pdf)
 
