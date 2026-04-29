@@ -1,6 +1,9 @@
 # Identifying Drivers of Predictive Aleatoric Uncertainty
 
-Appendices, Supplements, and Code for IJCAI 2025 submission "Identifying Drivers of Predictive Aleatoric Uncertainty".
+Appendices, Supplements, and Code for IJCAI 2025 publication "Identifying Drivers of Predictive Aleatoric Uncertainty".
+
+Please cite our work as
+<ins>Iversen, P.</ins>, <ins>Witzke, S.</ins>, Baum, K. & Renard, B. Y. Identifying Drivers of Predictive Aleatoric Uncertainty. in Proceedings of the Thirty-Fourth International Joint Conference on Artificial Intelligence, IJCAI-25 (ed. Kwok, J.) 5453–5462 (International Joint Conferences on Artificial Intelligence Organization, 2025). doi:10.24963/ijcai.2025/607.
 
 This README details how to reproduce the results from our manuscript **Identifying Drivers of Predictive Aleatory Uncertainty**. The README is divided into multiple sections shown in the [Table of Contents](#table-of-contents). 
 
